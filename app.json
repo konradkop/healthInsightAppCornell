@@ -9,7 +9,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.konrad.healthInsights",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSHealthShareUsageDescription": "This app reads your health data to display steps, heart rate, and other fitness metrics.",
+        "NSHealthUpdateUsageDescription": "This app updates your health data to help track your fitness and wellness goals."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -43,6 +49,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e31c3db7-175d-458a-be0b-c7fb18556fee"
+      }
     }
   }
 }

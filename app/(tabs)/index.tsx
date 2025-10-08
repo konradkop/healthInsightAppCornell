@@ -1,98 +1,168 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors, Fonts } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useRef, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const colorScheme = useColorScheme();
+  const [messages, setMessages] = useState([
+    { id: 1, sender: "bot", text: "👋 Hi there! How can I help you today?" },
+  ]);
+  const [input, setInput] = useState("");
+  const scrollViewRef = useRef<ScrollView>(null);
+  const isDark = colorScheme === "dark";
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const handleSend = () => {
+    if (!input.trim()) return;
+
+    const newMessage = { id: Date.now(), sender: "user", text: input.trim() };
+    setMessages((prev) => [...prev, newMessage]);
+    setInput("");
+
+    // Simulate bot reply
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: "bot",
+          text: "This is a placeholder response",
+        },
+      ]);
+    }, 800);
+  };
+
+  return (
+    <ThemedView style={styles.container}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={90}
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.chatContainer}
+          contentContainerStyle={{ padding: 16 }}
+          onContentSizeChange={() =>
+            scrollViewRef.current?.scrollToEnd({ animated: true })
+          }
+        >
+          <ThemedText
+            type="title"
+            style={{
+              fontFamily: Fonts.rounded,
+              textAlign: "center",
+              marginBottom: 16,
+            }}
+          >
+            Health Insight Chatbot 💬
+          </ThemedText>
+
+          {messages.map((msg) => {
+            const isUser = msg.sender === "user";
+            const bubbleColor = isUser ? "#007AFF" : "#E5E5EA";
+            const textColor = isUser
+              ? "#fff" // user text on blue bubble
+              : isDark
+              ? "#000" // bot text on light gray bubble in dark mode
+              : "#111"; // bot text on light gray bubble in light mode
+
+            return (
+              <View
+                key={msg.id}
+                style={[
+                  styles.messageBubble,
+                  isUser ? styles.userBubble : styles.botBubble,
+                  { backgroundColor: bubbleColor },
+                ]}
+              >
+                <ThemedText style={{ color: textColor }}>{msg.text}</ThemedText>
+              </View>
+            );
+          })}
+        </ScrollView>
+
+        {/* Input box */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            placeholder="Type a message..."
+            placeholderTextColor="#999"
+            style={[
+              styles.input,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].background,
+                color: Colors[colorScheme ?? "light"].text,
+              },
+            ]}
+          />
+          <TouchableOpacity
+            onPress={handleSend}
+            style={[
+              styles.sendButton,
+              { backgroundColor: Colors[colorScheme ?? "light"].tint },
+            ]}
+          >
+            <IconSymbol name="paperplane.fill" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  chatContainer: {
+    flex: 1,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  messageBubble: {
+    maxWidth: "80%",
+    padding: 10,
+    borderRadius: 16,
+    marginVertical: 6,
+  },
+  userBubble: {
+    alignSelf: "flex-end",
+    backgroundColor: "#007AFF",
+  },
+  botBubble: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E5E5EA",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: "#ccc",
+  },
+  input: {
+    flex: 1,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 16,
+    marginRight: 8,
+  },
+  sendButton: {
+    borderRadius: 20,
+    padding: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
