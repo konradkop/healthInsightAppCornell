@@ -1,3 +1,5 @@
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import React from "react";
 import { StyleSheet, Text, View, useColorScheme } from "react-native";
 import { useHealthKit } from "../../hooks/useHealthKit";
@@ -41,19 +43,19 @@ export default function HealthKit() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>
+    <ThemedView style={styles.container}>
+      <ThemedText style={styles.text}>
         HealthKit Available: {isAvailable ? "Yes" : "No"}
-      </Text>
-      <Text style={styles.text}>
+      </ThemedText>
+      <ThemedText style={styles.text}>
         HealthKit Authorized: {isAuthorized ? "Yes" : "No"}
-      </Text>
-      <Text style={styles.text}>
+      </ThemedText>
+      <ThemedText style={styles.text}>
         Today&apos;s Steps: {stepCount ?? "Loading..."}
-      </Text>
-      <Text style={styles.text}>
+      </ThemedText>
+      <ThemedText style={styles.text}>
         Latest Heart Rate: {heartRate ?? "Loading..."}
-      </Text>
-    </View>
+      </ThemedText>
+    </ThemedView>
   );
 }

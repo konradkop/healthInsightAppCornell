@@ -19,6 +19,7 @@ const permissions: HealthKitPermissions = {
       AppleHealthKit.Constants.Permissions.Height,
       AppleHealthKit.Constants.Permissions.Weight,
       AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
+      AppleHealthKit.Constants.Permissions.SleepAnalysis, 
     ],
     write: [
       AppleHealthKit.Constants.Permissions.StepCount,
@@ -26,6 +27,7 @@ const permissions: HealthKitPermissions = {
       AppleHealthKit.Constants.Permissions.Height,
       AppleHealthKit.Constants.Permissions.Weight,
       AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
+      AppleHealthKit.Constants.Permissions.SleepAnalysis,
     ],
   },
 };
@@ -51,7 +53,7 @@ export const useHealthKit = () => {
       setHealthState({
         isAvailable: false,
         isAuthorized: false,
-        error: "AppleHealthKit not properly linked",
+        error: `AppleHealthKit not properly linked: ${AppleHealthKit.isAvailable}`,
       });
       return;
     }
