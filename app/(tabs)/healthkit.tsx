@@ -1,7 +1,14 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import React from "react";
-import { StyleSheet, Text, View, useColorScheme } from "react-native";
+import React, { useState } from "react";
+import {
+  Button,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useColorScheme,
+} from "react-native";
 import { useHealthKit } from "../../hooks/useHealthKit";
 
 export default function HealthKit() {
@@ -11,7 +18,30 @@ export default function HealthKit() {
     stepCount = 0,
     heartRate = 0,
     error,
+    triggerAuthorization,
   } = useHealthKit();
+
+  // Local click log: each entry is a timestamped string
+  const [clickLog, setClickLog] = useState<string[]>([]);
+
+  // Handler that records the click and calls the hook trigger
+  const handleConnectPress = () => {
+    const entry = `${new Date().toLocaleString()} — Connect pressed`;
+    setClickLog((prev) => [entry, ...prev]); // most-recent-first
+    if (triggerAuthorization) {
+      try {
+        triggerAuthorization();
+      } catch (e) {
+        const errEntry = `${new Date().toLocaleString()} — triggerAuthorization threw: ${String(
+          e
+        )}`;
+        setClickLog((prev) => [errEntry, ...prev]);
+      }
+    } else {
+      const missingEntry = `${new Date().toLocaleString()} — triggerAuthorization not available`;
+      setClickLog((prev) => [missingEntry, ...prev]);
+    }
+  };
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -32,12 +62,50 @@ export default function HealthKit() {
       fontSize: 16,
       marginBottom: 8,
     },
+    buttonWrap: {
+      marginTop: 16,
+      alignSelf: "flex-start",
+    },
+    logContainer: {
+      marginTop: 20,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? "#333" : "#eee",
+      paddingTop: 12,
+    },
+    logItem: {
+      color: isDark ? "#ddd" : "#333",
+      fontSize: 14,
+      marginBottom: 6,
+    },
   });
 
   if (error) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>Error: {error}</Text>
+        <Text style={styles.errorText}>Error: {String(error)}</Text>
+        <View style={styles.buttonWrap}>
+          <Button
+            title={
+              isAuthorized ? "Re-request Authorization" : "Connect to Health"
+            }
+            onPress={handleConnectPress}
+          />
+        </View>
+
+        <View style={styles.logContainer}>
+          <ThemedText style={styles.text}>Connect button history:</ThemedText>
+          <ScrollView>
+            {clickLog.length === 0 ? (
+              <ThemedText style={styles.logItem}>No attempts yet</ThemedText>
+            ) : (
+              clickLog.map((entry, idx) => (
+                <ThemedText key={`${entry}-${idx}`} style={styles.logItem}>
+                  {entry}
+                </ThemedText>
+              ))
+            )}
+          </ScrollView>
+        </View>
       </View>
     );
   }
@@ -56,6 +124,30 @@ export default function HealthKit() {
       <ThemedText style={styles.text}>
         Latest Heart Rate: {heartRate ?? "Loading..."}
       </ThemedText>
+
+      <View style={styles.buttonWrap}>
+        <Button
+          title={
+            isAuthorized ? "Re-request Authorization" : "Connect to Health"
+          }
+          onPress={handleConnectPress}
+        />
+      </View>
+
+      <View style={styles.logContainer}>
+        <ThemedText style={styles.text}>Connect button history:</ThemedText>
+        <ScrollView>
+          {clickLog.length === 0 ? (
+            <ThemedText style={styles.logItem}>No attempts yet</ThemedText>
+          ) : (
+            clickLog.map((entry, idx) => (
+              <ThemedText key={`${entry}-${idx}`} style={styles.logItem}>
+                {entry}
+              </ThemedText>
+            ))
+          )}
+        </ScrollView>
+      </View>
     </ThemedView>
   );
 }

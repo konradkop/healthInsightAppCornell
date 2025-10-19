@@ -1,5 +1,5 @@
 // hooks/useHealthKit.ts
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import AppleHealthKit, { HealthKitPermissions } from "react-native-health";
 
@@ -19,7 +19,7 @@ const permissions: HealthKitPermissions = {
       AppleHealthKit.Constants.Permissions.Height,
       AppleHealthKit.Constants.Permissions.Weight,
       AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
-      AppleHealthKit.Constants.Permissions.SleepAnalysis, 
+      AppleHealthKit.Constants.Permissions.SleepAnalysis,
     ],
     write: [
       AppleHealthKit.Constants.Permissions.StepCount,
@@ -38,51 +38,81 @@ export const useHealthKit = () => {
     isAuthorized: false,
   });
 
-  useEffect(() => {
+  const initHK = useCallback(() => {
     // HealthKit only exists on iOS devices
     if (Platform.OS !== "ios") {
+      const msg = "HealthKit is only available on iOS devices";
+      console.warn(msg);
       setHealthState({
         isAvailable: false,
         isAuthorized: false,
-        error: "HealthKit is only available on iOS devices",
+        error: msg,
       });
       return;
     }
 
     if (!AppleHealthKit || typeof AppleHealthKit.isAvailable !== "function") {
+      // Build a safe description without dereferencing properties that may not exist
+      let shapeDescription = "undefined";
+      try {
+        if (AppleHealthKit) {
+          const keys = Object.keys(AppleHealthKit).slice(0, 20);
+          shapeDescription = `object with keys: ${keys.join(", ")}`;
+        }
+      } catch (ex) {
+        shapeDescription = `uninspectable (${String(ex)})`;
+      }
+
+      const msg = `AppleHealthKit not properly linked (native module missing). typeof=${typeof AppleHealthKit}; ${shapeDescription}`;
+      console.error(msg, { AppleHealthKit });
       setHealthState({
         isAvailable: false,
         isAuthorized: false,
-        error: `AppleHealthKit not properly linked: ${AppleHealthKit.isAvailable}`,
+        error: msg,
       });
       return;
     }
 
-    AppleHealthKit.isAvailable((err, available) => {
+    AppleHealthKit.isAvailable((err: any, available: boolean) => {
       if (err || !available) {
+        const msg = `HealthKit not available: ${
+          err ? JSON.stringify(err) : "not available"
+        }`;
+        console.error(msg, err);
         setHealthState({
           isAvailable: false,
           isAuthorized: false,
-          error: "HealthKit not available",
+          error: msg,
         });
         return;
       }
 
-      AppleHealthKit.initHealthKit(permissions, (err) => {
-        if (err) {
+      // initHealthKit will ask for authorization (react-native-health)
+      AppleHealthKit.initHealthKit(permissions, (initErr: any) => {
+        if (initErr) {
+          const msg = `initHealthKit error: ${
+            typeof initErr === "string" ? initErr : JSON.stringify(initErr)
+          }`;
+          console.error(msg, initErr);
           setHealthState({
             isAvailable: true,
             isAuthorized: false,
-            error: err,
+            error: msg,
           });
-        } else {
-          setHealthState((prev) => ({
-            ...prev,
-            isAvailable: true,
-            isAuthorized: true,
-          }));
+          return;
+        }
 
-          // Fetch today’s step count
+        // Success: authorized (note: user can still deny some types)
+        console.log("initHealthKit success");
+        setHealthState((prev) => ({
+          ...prev,
+          isAvailable: true,
+          isAuthorized: true,
+          error: undefined,
+        }));
+
+        // Fetch today’s step count
+        try {
           const today = new Date();
           const startOfDay = new Date(
             today.getFullYear(),
@@ -92,8 +122,12 @@ export const useHealthKit = () => {
 
           AppleHealthKit.getStepCount(
             { startDate: startOfDay },
-            (err, result) => {
-              if (!err && result?.value != null) {
+            (scErr: any, result: any) => {
+              if (scErr) {
+                console.warn("getStepCount error:", scErr);
+                return;
+              }
+              if (result?.value != null) {
                 setHealthState((prev) => ({
                   ...prev,
                   stepCount: result.value,
@@ -102,11 +136,14 @@ export const useHealthKit = () => {
             }
           );
 
-          // Fetch latest heart rate
           AppleHealthKit.getHeartRateSamples(
             { startDate: startOfDay, limit: 1, ascending: false },
-            (err, results) => {
-              if (!err && results && results.length > 0) {
+            (hrErr: any, results: any) => {
+              if (hrErr) {
+                console.warn("getHeartRateSamples error:", hrErr);
+                return;
+              }
+              if (results && results.length > 0) {
                 setHealthState((prev) => ({
                   ...prev,
                   heartRate: results[0].value,
@@ -114,10 +151,17 @@ export const useHealthKit = () => {
               }
             }
           );
+        } catch (ex) {
+          console.error("Health data fetch exception:", ex);
         }
       });
     });
   }, []);
 
-  return healthState;
+  useEffect(() => {
+    initHK();
+  }, [initHK]);
+
+  // Expose a manual trigger so you can wire it to a button in TestFlight for re-testing
+  return { ...healthState, triggerAuthorization: initHK };
 };

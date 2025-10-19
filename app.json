@@ -15,6 +15,10 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSHealthShareUsageDescription": "This app reads your health data to display steps, heart rate, and other fitness metrics.",
         "NSHealthUpdateUsageDescription": "This app updates your health data to help track your fitness and wellness goals."
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.access": ["read", "write"]
       }
     },
     "android": {
@@ -34,6 +38,7 @@
     },
     "plugins": [
       "expo-router",
+      "react-native-health",
       [
         "expo-splash-screen",
         {
