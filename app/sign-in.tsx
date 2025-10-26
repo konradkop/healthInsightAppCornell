@@ -39,9 +39,9 @@ export default function LoginScreen() {
     setLoading(true);
     setError("");
     try {
-      // If your signIn accepts credentials, pass them here
-      await signIn();
-      router.replace("/"); // ✅ navigate to main app
+      // Pass email and password to signIn
+      await signIn(email, password);
+      router.replace("/"); // navigate to main app
     } catch (err: any) {
       console.error("Sign-in error:", err);
       setError(err.message || "Sign-in failed");
