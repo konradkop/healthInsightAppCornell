@@ -1,167 +1,182 @@
 // hooks/useHealthKit.ts
-import { useCallback, useEffect, useState } from "react";
-import { Platform } from "react-native";
-import AppleHealthKit, { HealthKitPermissions } from "react-native-health";
+import {
+  getMostRecentQuantitySample,
+  isHealthDataAvailable,
+  requestAuthorization,
+} from "@kingstinct/react-native-healthkit";
 
-interface HealthKitState {
-  isAvailable: boolean;
-  isAuthorized: boolean;
-  stepCount?: number;
-  heartRate?: number;
-  error?: string;
-}
+import { useEffect, useState } from "react";
+import { Alert, Platform } from "react-native";
 
-const permissions: HealthKitPermissions = {
-  permissions: {
-    read: [
-      AppleHealthKit.Constants.Permissions.StepCount,
-      AppleHealthKit.Constants.Permissions.HeartRate,
-      AppleHealthKit.Constants.Permissions.Height,
-      AppleHealthKit.Constants.Permissions.Weight,
-      AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
-      AppleHealthKit.Constants.Permissions.SleepAnalysis,
-    ],
-    write: [
-      AppleHealthKit.Constants.Permissions.StepCount,
-      AppleHealthKit.Constants.Permissions.HeartRate,
-      AppleHealthKit.Constants.Permissions.Height,
-      AppleHealthKit.Constants.Permissions.Weight,
-      AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
-      AppleHealthKit.Constants.Permissions.SleepAnalysis,
-    ],
-  },
-};
+export function useHealthKit() {
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [bodyFat, setBodyFat] = useState<number | null>(null);
+  const [heartRate, setHeartRate] = useState<number | null>(null);
+  const [stepCount, setStepCount] = useState<number | null>(null);
+  const [activeEnergy, setActiveEnergy] = useState<number | null>(null);
+  const [flightsClimbed, setFlightsClimbed] = useState<number | null>(null); // ✅ Added
 
-export const useHealthKit = () => {
-  const [healthState, setHealthState] = useState<HealthKitState>({
-    isAvailable: false,
-    isAuthorized: false,
-  });
-
-  const initHK = useCallback(() => {
-    // HealthKit only exists on iOS devices
+  // Check if HealthKit is available
+  useEffect(() => {
     if (Platform.OS !== "ios") {
-      const msg = "HealthKit is only available on iOS devices";
-      console.warn(msg);
-      setHealthState({
-        isAvailable: false,
-        isAuthorized: false,
-        error: msg,
-      });
+      setIsAvailable(false);
       return;
     }
 
-    if (!AppleHealthKit || typeof AppleHealthKit.isAvailable !== "function") {
-      // Build a safe description without dereferencing properties that may not exist
-      let shapeDescription = "undefined";
-      try {
-        if (AppleHealthKit) {
-          const keys = Object.keys(AppleHealthKit).slice(0, 20);
-          shapeDescription = `object with keys: ${keys.join(", ")}`;
-        }
-      } catch (ex) {
-        shapeDescription = `uninspectable (${String(ex)})`;
-      }
+    const checkAvailability = async () => {
+      const available = await isHealthDataAvailable();
+      setIsAvailable(available);
+    };
 
-      const msg = `AppleHealthKit not properly linked (native module missing). typeof=${typeof AppleHealthKit}; ${shapeDescription}`;
-      console.error(msg, { AppleHealthKit });
-      setHealthState({
-        isAvailable: false,
-        isAuthorized: false,
-        error: msg,
-      });
-      return;
-    }
-
-    AppleHealthKit.isAvailable((err: any, available: boolean) => {
-      if (err || !available) {
-        const msg = `HealthKit not available: ${
-          err ? JSON.stringify(err) : "not available"
-        }`;
-        console.error(msg, err);
-        setHealthState({
-          isAvailable: false,
-          isAuthorized: false,
-          error: msg,
-        });
-        return;
-      }
-
-      // initHealthKit will ask for authorization (react-native-health)
-      AppleHealthKit.initHealthKit(permissions, (initErr: any) => {
-        if (initErr) {
-          const msg = `initHealthKit error: ${
-            typeof initErr === "string" ? initErr : JSON.stringify(initErr)
-          }`;
-          console.error(msg, initErr);
-          setHealthState({
-            isAvailable: true,
-            isAuthorized: false,
-            error: msg,
-          });
-          return;
-        }
-
-        // Success: authorized (note: user can still deny some types)
-        console.log("initHealthKit success");
-        setHealthState((prev) => ({
-          ...prev,
-          isAvailable: true,
-          isAuthorized: true,
-          error: undefined,
-        }));
-
-        // Fetch today’s step count
-        try {
-          const today = new Date();
-          const startOfDay = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate()
-          ).toISOString();
-
-          AppleHealthKit.getStepCount(
-            { startDate: startOfDay },
-            (scErr: any, result: any) => {
-              if (scErr) {
-                console.warn("getStepCount error:", scErr);
-                return;
-              }
-              if (result?.value != null) {
-                setHealthState((prev) => ({
-                  ...prev,
-                  stepCount: result.value,
-                }));
-              }
-            }
-          );
-
-          AppleHealthKit.getHeartRateSamples(
-            { startDate: startOfDay, limit: 1, ascending: false },
-            (hrErr: any, results: any) => {
-              if (hrErr) {
-                console.warn("getHeartRateSamples error:", hrErr);
-                return;
-              }
-              if (results && results.length > 0) {
-                setHealthState((prev) => ({
-                  ...prev,
-                  heartRate: results[0].value,
-                }));
-              }
-            }
-          );
-        } catch (ex) {
-          console.error("Health data fetch exception:", ex);
-        }
-      });
-    });
+    checkAvailability();
   }, []);
 
-  useEffect(() => {
-    initHK();
-  }, [initHK]);
+  // ===== Body Fat =====
+  const requestBodyFatPermission = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+    await requestAuthorization(
+      ["HKQuantityTypeIdentifierBodyFatPercentage"],
+      ["HKQuantityTypeIdentifierBodyFatPercentage"]
+    );
+    Alert.alert("Permission granted for Body Fat %");
+  };
 
-  // Expose a manual trigger so you can wire it to a button in TestFlight for re-testing
-  return { ...healthState, triggerAuthorization: initHK };
-};
+  const fetchBodyFat = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+    const sample = await getMostRecentQuantitySample(
+      "HKQuantityTypeIdentifierBodyFatPercentage"
+    );
+    if (sample?.quantity) {
+      setBodyFat(sample.quantity);
+    } else {
+      Alert.alert("No body fat data found");
+    }
+  };
+
+  // ===== Heart Rate =====
+  const requestHeartRatePermission = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+    await requestAuthorization(
+      ["HKQuantityTypeIdentifierHeartRate"],
+      ["HKQuantityTypeIdentifierHeartRate"]
+    );
+    Alert.alert("Permission granted for Heart Rate");
+  };
+
+  const fetchHeartRate = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+    const sample = await getMostRecentQuantitySample(
+      "HKQuantityTypeIdentifierHeartRate"
+    );
+    if (sample?.quantity) {
+      setHeartRate(sample.quantity);
+    } else {
+      Alert.alert("No heart rate data found");
+    }
+  };
+
+  // ===== Step Count =====
+  const requestStepCountPermission = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+    await requestAuthorization(
+      ["HKQuantityTypeIdentifierStepCount"],
+      ["HKQuantityTypeIdentifierStepCount"]
+    );
+    Alert.alert("Permission granted for Step Count");
+  };
+
+  const fetchStepCount = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+
+    const sample = await getMostRecentQuantitySample(
+      "HKQuantityTypeIdentifierStepCount"
+    );
+
+    if (sample) {
+      Alert.alert("Step Count Sample", JSON.stringify(sample, null, 2));
+
+      if (sample.quantity) {
+        setStepCount(sample.quantity);
+      }
+    } else {
+      Alert.alert("No step count data found");
+    }
+  };
+
+  // ===== Active Energy =====
+  const requestActiveEnergyPermission = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+    await requestAuthorization(
+      ["HKQuantityTypeIdentifierActiveEnergyBurned"],
+      ["HKQuantityTypeIdentifierActiveEnergyBurned"]
+    );
+    Alert.alert("Permission granted for Active Energy Burned");
+  };
+
+  const fetchActiveEnergy = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+
+    const sample = await getMostRecentQuantitySample(
+      "HKQuantityTypeIdentifierActiveEnergyBurned"
+    );
+
+    if (sample?.quantity) {
+      setActiveEnergy(sample.quantity);
+    } else {
+      Alert.alert("No active energy data found");
+    }
+  };
+
+  // ===== Flights Climbed =====
+  const requestFlightsClimbedPermission = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+    await requestAuthorization(
+      ["HKQuantityTypeIdentifierFlightsClimbed"],
+      ["HKQuantityTypeIdentifierFlightsClimbed"]
+    );
+    Alert.alert("Permission granted for Flights Climbed");
+  };
+
+  const fetchFlightsClimbed = async () => {
+    if (Platform.OS !== "ios")
+      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+
+    const sample = await getMostRecentQuantitySample(
+      "HKQuantityTypeIdentifierFlightsClimbed"
+    );
+
+    if (sample?.quantity) {
+      setFlightsClimbed(sample.quantity);
+    } else {
+      Alert.alert("No flights climbed data found");
+    }
+  };
+
+  return {
+    isAvailable,
+    bodyFat,
+    heartRate,
+    stepCount,
+    activeEnergy,
+    flightsClimbed,
+    requestBodyFatPermission,
+    fetchBodyFat,
+    requestHeartRatePermission,
+    fetchHeartRate,
+    requestStepCountPermission,
+    fetchStepCount,
+    requestActiveEnergyPermission,
+    fetchActiveEnergy,
+    requestFlightsClimbedPermission,
+    fetchFlightsClimbed,
+  };
+}

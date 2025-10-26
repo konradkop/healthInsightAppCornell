@@ -1,8 +1,7 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Fonts } from "@/constants/theme";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -16,21 +15,16 @@ import {
   View,
 } from "react-native";
 
+import { useSession } from "./contexts/auth/ctx"; // ✅ new context
+
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-
+  const { signIn } = useSession(); // ✅ new function
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const router = useRouter();
-
-  const handleLogin = async () => {
-    // ...your login logic
-    await AsyncStorage.setItem("authToken", "your_jwt_token");
-    router.replace("/"); // redirects to the main tabs after login
-  };
+  const [error, setError] = useState("");
 
   const colors = {
     background: isDark ? "#0d0d0d" : "#f9fafb",
@@ -41,6 +35,21 @@ export default function LoginScreen() {
     button: "#007AFF",
   };
 
+  const handleSignIn = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // If your signIn accepts credentials, pass them here
+      await signIn();
+      router.replace("/"); // ✅ navigate to main app
+    } catch (err: any) {
+      console.error("Sign-in error:", err);
+      setError(err.message || "Sign-in failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ScrollView
       contentContainerStyle={[
@@ -49,9 +58,10 @@ export default function LoginScreen() {
       ]}
     >
       <Image
-        source={require("../../assets/images/cornell-circle.png")}
+        source={require("../assets/images/cornell-circle.png")}
         style={{ width: 100, height: 100, alignSelf: "center" }}
       />
+
       <ThemedView style={styles.titleContainer}>
         <ThemedText
           type="title"
@@ -64,10 +74,15 @@ export default function LoginScreen() {
           Health Insight App Cornell
         </ThemedText>
       </ThemedView>
+
       <ThemedText style={[styles.title]}>Welcome Back 👋</ThemedText>
       <ThemedText style={[styles.subtitle]}>Sign in to continue</ThemedText>
 
       <View style={styles.form}>
+        {error ? (
+          <Text style={{ color: "red", marginBottom: 12 }}>{error}</Text>
+        ) : null}
+
         <TextInput
           value={email}
           onChangeText={setEmail}
@@ -102,7 +117,7 @@ export default function LoginScreen() {
         />
 
         <TouchableOpacity
-          onPress={handleLogin}
+          onPress={handleSignIn}
           style={[
             styles.button,
             { backgroundColor: colors.button },
@@ -113,7 +128,7 @@ export default function LoginScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Login</Text>
+            <Text style={styles.buttonText}>Sign In</Text>
           )}
         </TouchableOpacity>
 

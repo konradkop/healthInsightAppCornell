@@ -12,13 +12,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.konrad.healthInsights",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSHealthShareUsageDescription": "This app reads your health data to display steps, heart rate, and other fitness metrics.",
-        "NSHealthUpdateUsageDescription": "This app updates your health data to help track your fitness and wellness goals."
+        "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
-        "com.apple.developer.healthkit": true,
-        "com.apple.developer.healthkit.access": ["read", "write"]
+        "com.apple.developer.healthkit": true
       }
     },
     "android": {
@@ -38,7 +35,14 @@
     },
     "plugins": [
       "expo-router",
-      "react-native-health",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Your own custom usage description",
+          "NSHealthUpdateUsageDescription": "Your own custom usage description",
+          "background": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -50,7 +54,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
