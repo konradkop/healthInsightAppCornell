@@ -14,7 +14,11 @@ import {
 
 export default function HomeScreen() {
   const [messages, setMessages] = useState([
-    { id: 1, sender: "bot", text: "👋 Hi there! How can I help you today?" },
+    {
+      id: 1,
+      role: "assistant",
+      content: "👋 Hi there! How can I help you today?",
+    },
   ]);
   const [input, setInput] = useState("");
   const scrollViewRef = useRef<ScrollView>(null);
@@ -23,29 +27,32 @@ export default function HomeScreen() {
     if (!input.trim()) return;
 
     const userMessage = input.trim();
-    const newMessage = { id: Date.now(), sender: "user", text: userMessage };
+    const newMessage = { id: Date.now(), role: "user", content: userMessage };
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
 
     try {
+      // const response = await fetch("http://127.0.0.1:8000/chat", {
       const response = await fetch(
-        // "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat"
-        // "http://127.0.0.1:8000/chat"
         "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat",
         {
+          //  "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat"
+          // "http://127.0.0.1:8000/chat"
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             user_id: 1,
-            message: userMessage,
-            use_harm_guardrail: true,
-            use_mi_check_guardrail: true,
+            messages: messages.map((m) => ({
+              role: m.role === "user" ? "user" : "assistant",
+              content: m.content,
+            })),
+            use_harm_guardrail: false,
+            use_mi_check_guardrail: false,
           }),
         }
       );
-
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -58,7 +65,7 @@ export default function HomeScreen() {
 
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, sender: "bot", text: botReply },
+        { id: Date.now() + 1, role: "bot", content: botReply },
       ]);
     } catch (error) {
       console.error("Error fetching chatbot response:", error);
@@ -66,8 +73,9 @@ export default function HomeScreen() {
         ...prev,
         {
           id: Date.now() + 1,
-          sender: "bot",
-          text: "⚠️ There was an issue connecting to the server. Please try again later.",
+          role: "bot",
+          content:
+            "⚠️ There was an issue connecting to the server. Please try again later.",
         },
       ]);
     }
@@ -92,7 +100,7 @@ export default function HomeScreen() {
             <TitleText>Health Insight Chatbot</TitleText>
 
             {messages.map((msg) => (
-              <ChatText key={msg.id} text={msg.text} sender={msg.sender} />
+              <ChatText key={msg.id} text={msg.content} sender={msg.role} />
             ))}
           </ScrollView>
 
