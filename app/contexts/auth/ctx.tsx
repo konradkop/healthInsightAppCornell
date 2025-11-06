@@ -35,7 +35,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
           // https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/auth/login
           // http://localhost:8000/auth/login
           const res = await fetch(
-            "health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/auth/login",
+            "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/auth/login",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
