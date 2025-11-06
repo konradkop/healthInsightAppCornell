@@ -44,7 +44,7 @@ export default function HomeScreen() {
           },
           body: JSON.stringify({
             user_id: 1,
-            messages: messages.map((m) => ({
+            messages: [...messages, newMessage].map((m) => ({
               role: m.role === "user" ? "user" : "assistant",
               content: m.content,
             })),
