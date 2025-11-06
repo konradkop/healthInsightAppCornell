@@ -19,24 +19,58 @@ export default function HomeScreen() {
   const [input, setInput] = useState("");
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
-    const newMessage = { id: Date.now(), sender: "user", text: input.trim() };
+    const userMessage = input.trim();
+    const newMessage = { id: Date.now(), sender: "user", text: userMessage };
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
 
-    // Simulate bot reply
-    setTimeout(() => {
+    try {
+      const response = await fetch(
+        // "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat"
+        // "http://127.0.0.1:8000/chat"
+        "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: 1,
+            message: userMessage,
+            use_harm_guardrail: true,
+            use_mi_check_guardrail: true,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const botReply =
+        data?.response ||
+        data?.message ||
+        "Sorry, I couldn’t understand that right now.";
+
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now() + 1, sender: "bot", text: botReply },
+      ]);
+    } catch (error) {
+      console.error("Error fetching chatbot response:", error);
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           sender: "bot",
-          text: "This is a placeholder response",
+          text: "⚠️ There was an issue connecting to the server. Please try again later.",
         },
       ]);
-    }, 800);
+    }
   };
 
   return (
