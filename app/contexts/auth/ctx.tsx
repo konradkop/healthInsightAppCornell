@@ -34,14 +34,11 @@ export function SessionProvider({ children }: PropsWithChildren) {
           // Replace this when deploying to make sure it goes to the azure server when deploying
           // https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/auth/login
           // http://localhost:8000/auth/login
-          const res = await fetch(
-            "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/auth/login",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username, password }),
-            }
-          );
+          const res = await fetch("http://localhost:8000/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
           if (!res.ok) {
             const errorData = await res.json();
             throw new Error(errorData.detail || "Login failed");

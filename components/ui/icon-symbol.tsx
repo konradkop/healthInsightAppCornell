@@ -24,6 +24,7 @@ const MAPPING = {
   "exclamationmark.lock": "lock",
   "lock.fill": "lock",
   "lock.open.fill": "lock-open",
+  message: "message",
 } as IconMapping;
 
 /**

@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 
-export default function HomeScreen() {
+export default function Chat() {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -32,27 +32,24 @@ export default function HomeScreen() {
     setInput("");
 
     try {
-      // const response = await fetch("http://127.0.0.1:8000/chat", {
-      const response = await fetch(
-        "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat",
-        {
-          //  "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat"
-          // "http://127.0.0.1:8000/chat"
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: 1,
-            messages: [...messages, newMessage].map((m) => ({
-              role: m.role === "user" ? "user" : "assistant",
-              content: m.content,
-            })),
-            use_harm_guardrail: false,
-            use_mi_check_guardrail: false,
-          }),
-        }
-      );
+      // const response = await fetch(" http://localhost:8000/chat", {
+      const response = await fetch("http://localhost:8000/chat", {
+        //  "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat"
+        // "http://localhost:8000/chat"
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: 1,
+          messages: [...messages, newMessage].map((m) => ({
+            role: m.role === "user" ? "user" : "assistant",
+            content: m.content,
+          })),
+          use_harm_guardrail: true,
+          use_mi_check_guardrail: true,
+        }),
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -92,7 +89,7 @@ export default function HomeScreen() {
           <ScrollView
             ref={scrollViewRef}
             style={styles.chatContainer}
-            contentContainerStyle={{ padding: 16 }}
+            contentContainerStyle={{ padding: 16, paddingTop: 50 }}
             onContentSizeChange={() =>
               scrollViewRef.current?.scrollToEnd({ animated: true })
             }

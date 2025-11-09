@@ -41,7 +41,7 @@ export default function LoginScreen() {
     try {
       // Pass email and password to signIn
       await signIn(email, password);
-      router.replace("/"); // navigate to main app
+      router.replace("/home"); // navigate to main app
     } catch (err: any) {
       console.error("Sign-in error:", err);
       setError(err.message || "Sign-in failed");
@@ -77,66 +77,67 @@ export default function LoginScreen() {
 
       <ThemedText style={[styles.title]}>Welcome Back 👋</ThemedText>
       <ThemedText style={[styles.subtitle]}>Sign in to continue</ThemedText>
+      <View style={styles.formContainer}>
+        <View style={styles.form}>
+          {error ? (
+            <Text style={{ color: "red", marginBottom: 12 }}>{error}</Text>
+          ) : null}
 
-      <View style={styles.form}>
-        {error ? (
-          <Text style={{ color: "red", marginBottom: 12 }}>{error}</Text>
-        ) : null}
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholderTextColor={colors.subtext}
+          />
 
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email"
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.card,
-              borderColor: colors.inputBorder,
-              color: colors.text,
-            },
-          ]}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholderTextColor={colors.subtext}
-        />
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
+            secureTextEntry
+            placeholderTextColor={colors.subtext}
+          />
 
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.card,
-              borderColor: colors.inputBorder,
-              color: colors.text,
-            },
-          ]}
-          secureTextEntry
-          placeholderTextColor={colors.subtext}
-        />
+          <TouchableOpacity
+            onPress={handleSignIn}
+            style={[
+              styles.button,
+              { backgroundColor: colors.button },
+              loading && { opacity: 0.7 },
+            ]}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Sign In</Text>
+            )}
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleSignIn}
-          style={[
-            styles.button,
-            { backgroundColor: colors.button },
-            loading && { opacity: 0.7 },
-          ]}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity>
-          <Text style={[styles.link, { color: colors.button }]}>
-            Forgot your password?
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={[styles.link, { color: colors.button }]}>
+              Forgot your password?
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -147,6 +148,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     padding: 24,
+  },
+  formContainer: {
+    width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
   },
   titleContainer: {
     marginBottom: 20,
