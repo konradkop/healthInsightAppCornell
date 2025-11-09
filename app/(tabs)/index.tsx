@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useSession } from "../contexts/auth/ctx";
 
-export default function Profile() {
+export default function Index() {
   const { signOut } = useSession();
 
   const userInfo = {
