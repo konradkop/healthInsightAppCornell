@@ -1,5 +1,7 @@
-// screens/HealthKitDemo.tsx
-import React from "react";
+import { CenteredContainer } from "@/components/centered-component";
+import { TitleText } from "@/components/title-text";
+import { Colors } from "@/constants/theme";
+import React, { useState } from "react";
 import {
   Button,
   Platform,
@@ -15,144 +17,164 @@ export default function HealthKitDemo() {
     isAvailable,
     bodyFat,
     heartRate,
-    requestBodyFatPermission,
     fetchBodyFat,
-    requestHeartRatePermission,
     fetchHeartRate,
-    requestStepCountPermission,
     fetchStepCount,
     stepCount,
-    requestActiveEnergyPermission,
     fetchActiveEnergy,
     activeEnergy,
     flightsClimbed,
-    requestFlightsClimbedPermission,
     fetchFlightsClimbed,
   } = useHealthKit();
 
-  if (Platform.OS !== "ios") {
-    return (
-      <View style={styles.nonIosContainer}>
-        <Text style={styles.nonIosText}>
-          🚫 HealthKit is only available on iOS devices.
-        </Text>
-      </View>
-    );
-  }
+  const [loading, setLoading] = useState(false);
+
+  // Sample fallback data
+  const sampleData = {
+    bodyFat: 22.5,
+    heartRate: 72,
+    stepCount: 7560,
+    activeEnergy: 450,
+    flightsClimbed: 12,
+  };
+
+  const useSample =
+    isAvailable === false || isAvailable === null || Platform.OS !== "ios";
+
+  const handleFetchAll = async () => {
+    if (useSample) return; // don't fetch if sample
+    setLoading(true);
+    try {
+      await Promise.all([
+        fetchBodyFat(),
+        fetchHeartRate(),
+        fetchStepCount(),
+        fetchActiveEnergy(),
+        fetchFlightsClimbed(),
+      ]);
+    } catch (err) {
+      console.error("Error fetching HealthKit data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>HealthKit Demo</Text>
+    <View style={styles.container}>
+      <CenteredContainer>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <TitleText>HealthKit Demo</TitleText>
 
-      <Text style={styles.status}>
-        HealthKit Available:{" "}
-        {isAvailable === null
-          ? "Checking..."
-          : isAvailable
-          ? "✅ Yes"
-          : "❌ No"}
-      </Text>
+          {Platform.OS !== "ios" && (
+            <Text style={styles.warning}>
+              ⚠️ HealthKit is only available on iOS devices. Showing sample
+              data.
+            </Text>
+          )}
 
-      <View style={styles.section}>
-        <Text style={styles.title}>Body Fat Percentage</Text>
-        <Button title="Request Permission" onPress={requestBodyFatPermission} />
-        <Button title="Fetch Latest" onPress={fetchBodyFat} />
-        {bodyFat !== null && (
-          <Text style={styles.data}>Body Fat: {bodyFat.toFixed(2)}%</Text>
-        )}
-      </View>
+          <View style={styles.infoCard}>
+            <Text style={styles.status}>
+              HealthKit Available:{" "}
+              {isAvailable === null
+                ? "Checking..."
+                : isAvailable
+                ? "✅ Yes"
+                : "❌ No (Using Sample Data)"}
+            </Text>
 
-      <View style={styles.section}>
-        <Text style={styles.title}>Heart Rate</Text>
-        <Button
-          title="Request Permission"
-          onPress={requestHeartRatePermission}
-        />
-        <Button title="Fetch Latest" onPress={fetchHeartRate} />
-        {heartRate !== null && (
-          <Text style={styles.data}>
-            Heart Rate: {heartRate.toFixed(0)} bpm
-          </Text>
-        )}
-      </View>
+            <Button
+              title={loading ? "Fetching..." : "Fetch All Data"}
+              onPress={handleFetchAll}
+              disabled={useSample || loading}
+            />
 
-      <View style={styles.section}>
-        <Text style={styles.title}>Step Count</Text>
-        <Button
-          title="Request Permission"
-          onPress={requestStepCountPermission}
-        />
-        <Button title="Fetch Latest" onPress={fetchStepCount} />
-        {stepCount !== null && (
-          <Text style={styles.data}>Steps: {stepCount.toFixed(0)}</Text>
-        )}
-      </View>
+            <View style={styles.section}>
+              <Text style={styles.label}>Body Fat Percentage</Text>
+              <Text style={styles.data}>
+                {(useSample ? sampleData.bodyFat : bodyFat ?? 0).toFixed(2)}%
+              </Text>
+            </View>
 
-      <View style={styles.section}>
-        <Text style={styles.title}>Active Energy</Text>
-        <Button
-          title="Grant Calories Permission"
-          onPress={requestActiveEnergyPermission}
-        />
-        <Button title="Fetch Active Energy" onPress={fetchActiveEnergy} />
-        <Text>Active Energy: {activeEnergy ?? "N/A"} kcal</Text>
-      </View>
+            <View style={styles.section}>
+              <Text style={styles.label}>Heart Rate</Text>
+              <Text style={styles.data}>
+                {(useSample ? sampleData.heartRate : heartRate ?? 0).toFixed(0)}{" "}
+                bpm
+              </Text>
+            </View>
 
-      <View style={styles.section}>
-        <Text style={styles.title}>Flights Climbed</Text>
-        <Button
-          title="Grant Flights Permission"
-          onPress={requestFlightsClimbedPermission}
-        />
-        <Button title="Fetch Flights Climbed" onPress={fetchFlightsClimbed} />
-        <Text>Flights Climbed: {flightsClimbed ?? "N/A"}</Text>
-      </View>
-    </ScrollView>
+            <View style={styles.section}>
+              <Text style={styles.label}>Step Count</Text>
+              <Text style={styles.data}>
+                {(useSample ? sampleData.stepCount : stepCount ?? 0).toFixed(0)}
+              </Text>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.label}>Active Energy</Text>
+              <Text style={styles.data}>
+                {useSample ? sampleData.activeEnergy : activeEnergy ?? 0} kcal
+              </Text>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.label}>Flights Climbed</Text>
+              <Text style={styles.data}>
+                {useSample ? sampleData.flightsClimbed : flightsClimbed ?? 0}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </CenteredContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    backgroundColor: "#fff",
-    padding: 20,
-    alignItems: "center",
-  },
-  nonIosContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.background,
   },
-  nonIosText: {
-    fontSize: 18,
+  content: {
+    padding: 24,
+    paddingBottom: 50,
+    width: "100%",
+    alignSelf: "center",
+  },
+  warning: {
+    color: "#d9534f",
+    fontSize: 16,
     textAlign: "center",
-    color: "#555",
-    marginHorizontal: 20,
+    marginBottom: 16,
   },
-  header: {
-    fontSize: 26,
-    fontWeight: "bold",
-    marginBottom: 20,
+  infoCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    gap: 16,
   },
   status: {
     fontSize: 16,
-    marginBottom: 30,
+    marginBottom: 20,
+    fontWeight: "500",
   },
   section: {
-    width: "100%",
-    marginBottom: 30,
-    padding: 15,
-    borderRadius: 12,
-    backgroundColor: "#f2f2f2",
+    marginBottom: 20,
   },
-  title: {
-    fontSize: 18,
-    marginBottom: 10,
+  label: {
     fontWeight: "600",
+    marginBottom: 8,
+    fontSize: 16,
   },
   data: {
-    marginTop: 10,
+    marginTop: 6,
     fontSize: 16,
     fontWeight: "500",
     color: "#333",
