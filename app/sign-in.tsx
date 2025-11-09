@@ -41,7 +41,7 @@ export default function LoginScreen() {
     try {
       // Pass email and password to signIn
       await signIn(email, password);
-      router.replace("/home"); // navigate to main app
+      router.replace("/"); // navigate to main app
     } catch (err: any) {
       console.error("Sign-in error:", err);
       setError(err.message || "Sign-in failed");
