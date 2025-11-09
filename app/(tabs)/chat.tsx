@@ -6,6 +6,7 @@ import { Colors } from "@/constants/theme";
 import { useHealthKit } from "@/hooks/useHealthKit";
 import { useRef, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -51,7 +52,7 @@ export default function Chat() {
     const newMessage = { id: Date.now(), role: "user", content: userMessage };
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
-
+    Alert.alert("Health Data", JSON.stringify(healthDataPayload, null, 2));
     try {
       // const response = await fetch(" http://localhost:8000/chat", {
       const response = await fetch(
