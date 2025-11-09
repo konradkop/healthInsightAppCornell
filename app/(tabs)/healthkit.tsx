@@ -29,7 +29,6 @@ export default function HealthKitDemo() {
 
   const [loading, setLoading] = useState(false);
 
-  // Sample fallback data
   const sampleData = {
     bodyFat: 22.5,
     heartRate: 72,
@@ -137,6 +136,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
+    padding: 16,
+    paddingTop: 50,
   },
   content: {
     padding: 24,

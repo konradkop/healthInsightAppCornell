@@ -14,7 +14,7 @@ export function useHealthKit() {
   const [heartRate, setHeartRate] = useState<number | null>(null);
   const [stepCount, setStepCount] = useState<number | null>(null);
   const [activeEnergy, setActiveEnergy] = useState<number | null>(null);
-  const [flightsClimbed, setFlightsClimbed] = useState<number | null>(null); // ✅ Added
+  const [flightsClimbed, setFlightsClimbed] = useState<number | null>(null);
 
   // Check if HealthKit is available
   useEffect(() => {
@@ -98,12 +98,8 @@ export function useHealthKit() {
       "HKQuantityTypeIdentifierStepCount"
     );
 
-    if (sample) {
-      Alert.alert("Step Count Sample", JSON.stringify(sample, null, 2));
-
-      if (sample.quantity) {
-        setStepCount(sample.quantity);
-      }
+    if (sample?.quantity) {
+      setStepCount(sample.quantity);
     } else {
       Alert.alert("No step count data found");
     }
