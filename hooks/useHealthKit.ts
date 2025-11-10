@@ -49,9 +49,18 @@ export function useHealthKit() {
 
   // Generic permission requester
   const requestPermission = async (identifier: QuantityTypeIdentifier) => {
-    if (Platform.OS !== "ios")
-      return Alert.alert("Unsupported", "HealthKit is only available on iOS.");
-    await requestAuthorization([], [identifier]);
+    if (Platform.OS !== "ios") {
+      Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+      return false;
+    }
+    try {
+      await requestAuthorization([], [identifier]);
+      return true;
+    } catch (err) {
+      console.error(`Permission request failed for ${identifier}:`, err);
+      Alert.alert(`Permission request failed for ${identifier}`);
+      return false;
+    }
   };
 
   // Generic fetcher for most recent
@@ -89,40 +98,60 @@ export function useHealthKit() {
   };
 
   // ===== Body Fat =====
-  const requestBodyFatPermission = () =>
-    requestPermission("HKQuantityTypeIdentifierBodyFatPercentage");
-  const fetchBodyFat = async () =>
-    setBodyFat(
-      await fetchMostRecent("HKQuantityTypeIdentifierBodyFatPercentage")
+  const fetchBodyFat = async () => {
+    const granted = await requestPermission(
+      "HKQuantityTypeIdentifierBodyFatPercentage"
     );
+    if (!granted) return;
+    const value = await fetchMostRecent(
+      "HKQuantityTypeIdentifierBodyFatPercentage"
+    );
+    setBodyFat(value);
+  };
 
   // ===== Heart Rate =====
-  const requestHeartRatePermission = () =>
-    requestPermission("HKQuantityTypeIdentifierHeartRate");
-  const fetchHeartRate = async () =>
-    setHeartRate(await fetchLast7Days("HKQuantityTypeIdentifierHeartRate"));
+  const fetchHeartRate = async () => {
+    const granted = await requestPermission(
+      "HKQuantityTypeIdentifierHeartRate"
+    );
+    if (!granted) return;
+    const value = await fetchLast7Days("HKQuantityTypeIdentifierHeartRate");
+    setHeartRate(value);
+  };
 
   // ===== Step Count =====
-  const requestStepCountPermission = () =>
-    requestPermission("HKQuantityTypeIdentifierStepCount");
-  const fetchStepCount = async () =>
-    setStepCount(await fetchLast7Days("HKQuantityTypeIdentifierStepCount"));
+  const fetchStepCount = async () => {
+    const granted = await requestPermission(
+      "HKQuantityTypeIdentifierStepCount"
+    );
+    if (!granted) return;
+    const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
+    setStepCount(value);
+  };
 
   // ===== Active Energy =====
-  const requestActiveEnergyPermission = () =>
-    requestPermission("HKQuantityTypeIdentifierActiveEnergyBurned");
-  const fetchActiveEnergy = async () =>
-    setActiveEnergy(
-      await fetchLast7Days("HKQuantityTypeIdentifierActiveEnergyBurned")
+  const fetchActiveEnergy = async () => {
+    const granted = await requestPermission(
+      "HKQuantityTypeIdentifierActiveEnergyBurned"
     );
+    if (!granted) return;
+    const value = await fetchLast7Days(
+      "HKQuantityTypeIdentifierActiveEnergyBurned"
+    );
+    setActiveEnergy(value);
+  };
 
   // ===== Flights Climbed =====
-  const requestFlightsClimbedPermission = () =>
-    requestPermission("HKQuantityTypeIdentifierFlightsClimbed");
-  const fetchFlightsClimbed = async () =>
-    setFlightsClimbed(
-      await fetchLast7Days("HKQuantityTypeIdentifierFlightsClimbed")
+  const fetchFlightsClimbed = async () => {
+    const granted = await requestPermission(
+      "HKQuantityTypeIdentifierFlightsClimbed"
     );
+    if (!granted) return;
+    const value = await fetchLast7Days(
+      "HKQuantityTypeIdentifierFlightsClimbed"
+    );
+    setFlightsClimbed(value);
+  };
 
   return {
     isAvailable,
@@ -131,15 +160,10 @@ export function useHealthKit() {
     stepCount,
     activeEnergy,
     flightsClimbed,
-    requestBodyFatPermission,
     fetchBodyFat,
-    requestHeartRatePermission,
     fetchHeartRate,
-    requestStepCountPermission,
     fetchStepCount,
-    requestActiveEnergyPermission,
     fetchActiveEnergy,
-    requestFlightsClimbedPermission,
     fetchFlightsClimbed,
   };
 }
