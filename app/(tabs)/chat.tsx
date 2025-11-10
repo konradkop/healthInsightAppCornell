@@ -6,7 +6,6 @@ import { Colors } from "@/constants/theme";
 
 import { useRef, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -44,7 +43,6 @@ export default function Chat() {
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
 
-    Alert.alert("Health Data", JSON.stringify(healthDataPayload, null, 2));
     // "http://localhost:8000/chat"
     try {
       const response = await fetch(

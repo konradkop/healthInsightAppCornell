@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useSharedHealthKit } from "../contexts/healthkit/HealthKitContext";
+import { DailyStats } from "../contexts/healthkit/HealthKitContextTypes";
 
 export default function HealthKitDemo() {
   const {
@@ -26,7 +27,6 @@ export default function HealthKitDemo() {
 
   const [loading, setLoading] = useState(false);
 
-  // If HealthKit is unavailable or non-iOS, we’ll use the sampleData
   const useSample =
     !isAvailable || isAvailable === null || Platform.OS !== "ios";
 
@@ -50,6 +50,20 @@ export default function HealthKitDemo() {
       setLoading(false);
     }
   };
+
+  const renderDailyStats = (stats: DailyStats, unit?: string) => (
+    <View>
+      <Text style={styles.label}>Daily Values:</Text>
+      {stats.daily.map((val, idx) => (
+        <Text key={idx} style={styles.data}>
+          Day {idx + 1}: {val.toFixed(0)} {unit ?? ""}
+        </Text>
+      ))}
+      <Text style={[styles.data, styles.avg]}>
+        Average: {stats.avg?.toFixed(0)} {unit ?? ""}
+      </Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -90,22 +104,22 @@ export default function HealthKitDemo() {
 
             <View style={styles.section}>
               <Text style={styles.label}>Heart Rate</Text>
-              <Text style={styles.data}>{heartRate.toFixed(0)} bpm</Text>
+              {renderDailyStats(heartRate, "bpm")}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Step Count</Text>
-              <Text style={styles.data}>{stepCount.toFixed(0)}</Text>
+              {renderDailyStats(stepCount)}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Active Energy</Text>
-              <Text style={styles.data}>{activeEnergy.toFixed(0)} kcal</Text>
+              {renderDailyStats(activeEnergy, "kcal")}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Flights Climbed</Text>
-              <Text style={styles.data}>{flightsClimbed.toFixed(0)}</Text>
+              {renderDailyStats(flightsClimbed)}
             </View>
           </View>
         </ScrollView>
@@ -157,9 +171,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   data: {
-    marginTop: 6,
+    marginTop: 4,
     fontSize: 16,
     fontWeight: "500",
     color: "#333",
+  },
+  avg: {
+    marginTop: 6,
+    fontWeight: "700",
   },
 });
