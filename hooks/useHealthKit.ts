@@ -3,7 +3,7 @@ import {
   getMostRecentQuantitySample,
   isHealthDataAvailable,
   QuantityTypeIdentifier,
-  queryStatisticsCollectionForQuantity,
+  queryQuantitySamples,
   requestAuthorization,
 } from "@kingstinct/react-native-healthkit";
 import { useEffect, useState } from "react";
@@ -69,31 +69,45 @@ export function useHealthKit() {
     return sample?.quantity ?? null;
   };
 
-  // Generic fetcher for last 7 days + average
   const fetchLast7Days = async (identifier: QuantityTypeIdentifier) => {
     const now = new Date();
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(now.getDate() - 7);
 
     try {
-      const stats = await queryStatisticsCollectionForQuantity(
-        identifier,
-        ["cumulativeSum"],
-        sevenDaysAgo.toISOString().slice(0, 10),
-        { day: 1 }
-      );
+      const samples = await queryQuantitySamples(identifier, {
+        filter: {
+          startDate: sevenDaysAgo,
+          endDate: now,
+        },
+        ascending: true,
+      });
 
-      const daily = stats.map((stat) => stat.sumQuantity?.quantity ?? 0);
-      const avg =
-        daily.length > 0
-          ? daily.reduce((sum, val) => sum + val, 0) / daily.length
-          : null;
+      // Group by day (YYYY-MM-DD)
+      const dailyMap: Record<string, number> = {};
+      samples.forEach((sample) => {
+        const day = JSON.stringify(sample.startDate).slice(0, 10);
+        dailyMap[day] = (dailyMap[day] ?? 0) + sample.quantity;
+      });
+
+      // Build daily array for past 7 days
+      const daily: number[] = [];
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(sevenDaysAgo);
+        day.setDate(sevenDaysAgo.getDate() + i);
+        const key = day.toISOString().slice(0, 10);
+        daily.push(dailyMap[key] ?? 0);
+      }
+
+      const avg = daily.length
+        ? daily.reduce((sum, val) => sum + val, 0) / daily.length
+        : null;
 
       return { daily, avg };
     } catch (err) {
-      console.error(`Error fetching 7-day stats for ${identifier}:`, err);
+      console.error(`Error fetching 7-day samples for ${identifier}:`, err);
       Alert.alert(
-        `Error fetching 7-day stats for ${identifier}`,
+        `Error fetching 7-day samples for ${identifier}`,
         JSON.stringify(err)
       );
       return { daily: [], avg: null };
