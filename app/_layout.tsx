@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { SessionProvider, useSession } from "./contexts/auth/ctx";
+import { HealthKitProvider } from "./contexts/healthkit/HealthKitContext";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -11,8 +12,10 @@ export const unstable_settings = {
 export default function RootLayout() {
   return (
     <SessionProvider>
-      <RootNavigator />
-      <StatusBar style="auto" />
+      <HealthKitProvider>
+        <RootNavigator />
+        <StatusBar style="auto" />
+      </HealthKitProvider>
     </SessionProvider>
   );
 }

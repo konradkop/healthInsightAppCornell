@@ -1,6 +1,7 @@
 import { CenteredContainer } from "@/components/centered-component";
 import { TitleText } from "@/components/title-text";
 import { Colors } from "@/constants/theme";
+
 import React, { useState } from "react";
 import {
   Button,
@@ -10,38 +11,30 @@ import {
   Text,
   View,
 } from "react-native";
-import { useHealthKit } from "../../hooks/useHealthKit";
+import { useSharedHealthKit } from "../contexts/healthkit/HealthKitContext";
 
 export default function HealthKitDemo() {
   const {
     isAvailable,
-    bodyFat,
-    heartRate,
+    healthData,
     fetchBodyFat,
     fetchHeartRate,
     fetchStepCount,
-    stepCount,
     fetchActiveEnergy,
-    activeEnergy,
-    flightsClimbed,
     fetchFlightsClimbed,
-  } = useHealthKit();
+  } = useSharedHealthKit();
 
   const [loading, setLoading] = useState(false);
 
-  const sampleData = {
-    bodyFat: 22.5,
-    heartRate: 72,
-    stepCount: 7560,
-    activeEnergy: 450,
-    flightsClimbed: 12,
-  };
-
+  // If HealthKit is unavailable or non-iOS, we’ll use the sampleData
   const useSample =
-    isAvailable === false || isAvailable === null || Platform.OS !== "ios";
+    !isAvailable || isAvailable === null || Platform.OS !== "ios";
+
+  const { bodyFat, heartRate, stepCount, activeEnergy, flightsClimbed } =
+    healthData;
 
   const handleFetchAll = async () => {
-    if (useSample) return; // don't fetch if sample
+    if (useSample) return;
     setLoading(true);
     try {
       await Promise.all([
@@ -92,38 +85,27 @@ export default function HealthKitDemo() {
 
             <View style={styles.section}>
               <Text style={styles.label}>Body Fat Percentage</Text>
-              <Text style={styles.data}>
-                {(useSample ? sampleData.bodyFat : bodyFat ?? 0).toFixed(2)}%
-              </Text>
+              <Text style={styles.data}>{bodyFat.toFixed(2)}%</Text>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Heart Rate</Text>
-              <Text style={styles.data}>
-                {(useSample ? sampleData.heartRate : heartRate ?? 0).toFixed(0)}{" "}
-                bpm
-              </Text>
+              <Text style={styles.data}>{heartRate.toFixed(0)} bpm</Text>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Step Count</Text>
-              <Text style={styles.data}>
-                {(useSample ? sampleData.stepCount : stepCount ?? 0).toFixed(0)}
-              </Text>
+              <Text style={styles.data}>{stepCount.toFixed(0)}</Text>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Active Energy</Text>
-              <Text style={styles.data}>
-                {useSample ? sampleData.activeEnergy : activeEnergy ?? 0} kcal
-              </Text>
+              <Text style={styles.data}>{activeEnergy.toFixed(0)} kcal</Text>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Flights Climbed</Text>
-              <Text style={styles.data}>
-                {useSample ? sampleData.flightsClimbed : flightsClimbed ?? 0}
-              </Text>
+              <Text style={styles.data}>{flightsClimbed.toFixed(0)}</Text>
             </View>
           </View>
         </ScrollView>

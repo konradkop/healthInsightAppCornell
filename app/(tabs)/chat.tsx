@@ -3,7 +3,7 @@ import { ChatInput } from "@/components/chat-input";
 import { ChatText } from "@/components/chat-text";
 import { TitleText } from "@/components/title-text";
 import { Colors } from "@/constants/theme";
-import { useHealthKit } from "@/hooks/useHealthKit";
+
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -13,6 +13,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { useSharedHealthKit } from "../contexts/healthkit/HealthKitContext";
 
 export default function Chat() {
   const [messages, setMessages] = useState([
@@ -24,26 +25,16 @@ export default function Chat() {
   ]);
   const [input, setInput] = useState("");
   const scrollViewRef = useRef<ScrollView>(null);
-  const {
-    isAvailable,
-    bodyFat,
-    heartRate,
-    stepCount,
-    activeEnergy,
-    flightsClimbed,
-  } = useHealthKit();
 
-  const sampleData = {
-    bodyFat: 22.5,
-    heartRate: 72,
-    stepCount: 7560,
-    activeEnergy: 450,
-    flightsClimbed: 12,
+  const { healthData } = useSharedHealthKit();
+
+  const healthDataPayload = {
+    bodyFat: healthData.bodyFat,
+    heartRate: healthData.heartRate,
+    stepCount: healthData.stepCount,
+    activeEnergy: healthData.activeEnergy,
+    flightsClimbed: healthData.flightsClimbed,
   };
-
-  const healthDataPayload = isAvailable
-    ? { bodyFat, heartRate, stepCount, activeEnergy, flightsClimbed }
-    : sampleData;
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -52,14 +43,13 @@ export default function Chat() {
     const newMessage = { id: Date.now(), role: "user", content: userMessage };
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
+
     Alert.alert("Health Data", JSON.stringify(healthDataPayload, null, 2));
+    // "http://localhost:8000/chat"
     try {
-      // const response = await fetch(" http://localhost:8000/chat", {
       const response = await fetch(
         "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat",
         {
-          //  "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat"
-          // "http://localhost:8000/chat"
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -76,6 +66,7 @@ export default function Chat() {
           }),
         }
       );
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
