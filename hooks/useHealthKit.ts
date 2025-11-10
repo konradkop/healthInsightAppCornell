@@ -79,7 +79,7 @@ export function useHealthKit() {
       const stats = await queryStatisticsCollectionForQuantity(
         identifier,
         ["cumulativeSum"],
-        sevenDaysAgo.toISOString(),
+        sevenDaysAgo.toISOString().slice(0, 10),
         { day: 1 }
       );
 
@@ -92,7 +92,10 @@ export function useHealthKit() {
       return { daily, avg };
     } catch (err) {
       console.error(`Error fetching 7-day stats for ${identifier}:`, err);
-      Alert.alert(`Error fetching 7-day stats for ${identifier}`);
+      Alert.alert(
+        `Error fetching 7-day stats for ${identifier}`,
+        JSON.stringify(err)
+      );
       return { daily: [], avg: null };
     }
   };
