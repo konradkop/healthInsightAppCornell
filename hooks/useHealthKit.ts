@@ -88,13 +88,13 @@ export function useHealthKit() {
         console.log(`No samples for ${identifier}`);
         return { daily: Array(7).fill(0), avg: 0 };
       }
+      Alert.alert(JSON.stringify(samples));
 
       const dailyMap: Record<string, number> = {};
       samples.forEach((sample) => {
         const localDay = new Date(sample.startDate).toLocaleDateString("en-US");
         dailyMap[localDay] = (dailyMap[localDay] ?? 0) + sample.quantity;
       });
-      Alert.alert(JSON.stringify(dailyMap));
 
       const daily: number[] = [];
 
