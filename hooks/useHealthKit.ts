@@ -81,34 +81,43 @@ export function useHealthKit() {
           endDate: now,
         },
         ascending: true,
-        limit: 1000,
+        limit: 5000,
+        unit: "count",
       });
 
       if (!samples?.length) {
         console.log(`No samples for ${identifier}`);
         return { daily: Array(7).fill(0), avg: 0 };
       }
-      Alert.alert(JSON.stringify(samples));
+
+      const iphoneSamples = samples.filter((s) => {
+        const sourceName = s.sourceRevision?.source?.name?.toLowerCase() ?? "";
+        const bundleId =
+          s.sourceRevision?.source?.bundleIdentifier?.toLowerCase() ?? "";
+        return sourceName.includes("iphone") || bundleId.includes("iphone");
+      });
+
+      if (!iphoneSamples.length) {
+        console.log(`No iPhone samples for ${identifier}`);
+        return { daily: Array(7).fill(0), avg: 0 };
+      }
 
       const dailyMap: Record<string, number> = {};
-      samples.forEach((sample) => {
-        const localDay = new Date(sample.startDate).toLocaleDateString("en-US");
-        dailyMap[localDay] = (dailyMap[localDay] ?? 0) + sample.quantity;
+      iphoneSamples.forEach((sample) => {
+        const day = new Date(sample.startDate).toISOString().slice(0, 10);
+        dailyMap[day] = (dailyMap[day] ?? 0) + sample.quantity;
       });
 
       const daily: number[] = [];
-
       for (let i = 0; i < 7; i++) {
         const d = new Date(sevenDaysAgo);
         d.setDate(sevenDaysAgo.getDate() + i);
-        const key = d.toLocaleDateString("en-US");
+        const key = d.toISOString().slice(0, 10);
         daily.push(dailyMap[key] ?? 0);
       }
-      Alert.alert(JSON.stringify(daily));
-      const avg =
-        daily.length > 0
-          ? daily.reduce((sum, val) => sum + val, 0) / daily.length
-          : null;
+
+      // 📊 Average
+      const avg = daily.reduce((a, b) => a + b, 0) / daily.length;
 
       return { daily, avg };
     } catch (err) {
