@@ -82,7 +82,6 @@ export function useHealthKit() {
         },
         ascending: true,
         limit: 5000,
-        unit: "count",
       });
 
       if (!samples?.length) {
@@ -104,20 +103,22 @@ export function useHealthKit() {
 
       const dailyMap: Record<string, number> = {};
       iphoneSamples.forEach((sample) => {
-        const day = new Date(sample.startDate).toISOString().slice(0, 10);
-        dailyMap[day] = (dailyMap[day] ?? 0) + sample.quantity;
+        const localDay = new Date(sample.startDate).toLocaleDateString("en-US");
+        dailyMap[localDay] = (dailyMap[localDay] ?? 0) + sample.quantity;
       });
 
       const daily: number[] = [];
       for (let i = 0; i < 7; i++) {
         const d = new Date(sevenDaysAgo);
         d.setDate(sevenDaysAgo.getDate() + i);
-        const key = d.toISOString().slice(0, 10);
+        const key = d.toLocaleDateString("en-US");
         daily.push(dailyMap[key] ?? 0);
       }
 
-      // 📊 Average
-      const avg = daily.reduce((a, b) => a + b, 0) / daily.length;
+      const avg =
+        daily.length > 0
+          ? daily.reduce((sum, val) => sum + val, 0) / daily.length
+          : null;
 
       return { daily, avg };
     } catch (err) {
