@@ -83,29 +83,27 @@ export function useHealthKit() {
         ascending: true,
       });
 
-      Alert.alert(
-        `Fetched ${JSON.stringify(
-          samples
-        )} samples for ${identifier} in last 7 days`
-      );
-
-      // Group by day (YYYY-MM-DD)
-      const dailyMap: Record<string, number> = {};
-      samples.forEach((sample) => {
-        const day = new Date(sample.startDate).toISOString().slice(0, 10);
-
-        dailyMap[day] = (dailyMap[day] ?? 0) + sample.quantity;
-      });
-
-      // Build daily array for past 7 days
-      const daily: number[] = [];
-      for (let i = 0; i < 7; i++) {
-        const day = new Date(sevenDaysAgo.getTime());
-        day.setDate(day.getDate() + i);
-        const key = day.toISOString().slice(0, 10);
-        daily.push(dailyMap[key] ?? 0);
+      if (!samples?.length) {
+        console.log(`No samples for ${identifier}`);
+        return { daily: Array(7).fill(0), avg: 0 };
       }
 
+      const dailyMap: Record<string, number> = {};
+      samples.forEach((sample) => {
+        const localDay = new Date(sample.startDate).toLocaleDateString("en-US");
+        dailyMap[localDay] = (dailyMap[localDay] ?? 0) + sample.quantity;
+      });
+      Alert.alert(JSON.stringify(dailyMap));
+
+      const daily: number[] = [];
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(sevenDaysAgo);
+        d.setDate(sevenDaysAgo.getDate() + i);
+        const key = d.toLocaleDateString("en-US");
+        daily.push(dailyMap[key] ?? 0);
+      }
+      Alert.alert(JSON.stringify(daily));
       const avg =
         daily.length > 0
           ? daily.reduce((sum, val) => sum + val, 0) / daily.length
@@ -121,6 +119,7 @@ export function useHealthKit() {
       return { daily: [], avg: null };
     }
   };
+
   // ===== Body Fat =====
   const fetchBodyFat = async () => {
     const granted = await requestPermission(
