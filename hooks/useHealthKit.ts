@@ -72,7 +72,7 @@ export function useHealthKit() {
   const fetchLast7Days = async (identifier: QuantityTypeIdentifier) => {
     const now = new Date();
     const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(now.getDate() - 7);
+    sevenDaysAgo.setDate(now.getDate() - 6);
 
     try {
       const samples = await queryQuantitySamples(identifier, {
@@ -81,6 +81,7 @@ export function useHealthKit() {
           endDate: now,
         },
         ascending: true,
+        limit: 1000,
       });
 
       if (!samples?.length) {
