@@ -89,11 +89,14 @@ export function useHealthKit() {
         return { daily: Array(7).fill(0), avg: 0 };
       }
 
+      Alert.alert(
+        `Fetched ${JSON.stringify(samples)} samples for ${identifier}`
+      );
+
       const iphoneSamples = samples.filter((s) => {
-        const sourceName = s.sourceRevision?.source?.name?.toLowerCase() ?? "";
-        const bundleId =
-          s.sourceRevision?.source?.bundleIdentifier?.toLowerCase() ?? "";
-        return sourceName.includes("iphone") || bundleId.includes("iphone");
+        const sourceName = s.device?.name?.toLowerCase() ?? "";
+        const model = s.device?.model?.toLowerCase() ?? "";
+        return sourceName.includes("iphone") || model.includes("iphone");
       });
 
       if (!iphoneSamples.length) {
