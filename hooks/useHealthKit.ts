@@ -106,7 +106,7 @@ export function useHealthKit() {
       const samples = await queryQuantitySamples(identifier, {
         filter: { startDate: sevenDaysAgo, endDate: now },
         ascending: true,
-        limit: 5000,
+        limit: 7000,
       });
 
       if (!samples?.length) {
