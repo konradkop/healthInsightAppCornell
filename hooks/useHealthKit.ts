@@ -2,6 +2,7 @@
 import {
   getMostRecentQuantitySample,
   isHealthDataAvailable,
+  QuantitySample,
   QuantityTypeIdentifier,
   queryQuantitySamples,
   requestAuthorization,
@@ -13,6 +14,29 @@ type DailyStats = {
   daily: number[];
   avg: number | null;
 };
+
+// 🔹 Device priority filter using bundle identifiers
+function filterSamplesByDevicePreference(samples: readonly QuantitySample[]) {
+  if (!samples?.length) return [];
+
+  const lower = (val?: string) => val?.toLowerCase() ?? "";
+  const getBundle = (s: any) => lower(s.source?.bundleIdentifier);
+
+  // Priority order: Oura > Apple Watch > iPhone
+  const priorities = [
+    { key: "oura", match: "com.ouraring.oura" },
+    { key: "watch", match: "com.apple.watch" },
+    { key: "iphone", match: "com.apple.health" },
+  ];
+
+  for (const { match } of priorities) {
+    const filtered = samples.filter((s) => getBundle(s).includes(match));
+    if (filtered.length > 0) return filtered;
+  }
+
+  // fallback — if no recognized sources
+  return samples;
+}
 
 export function useHealthKit() {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
@@ -34,25 +58,28 @@ export function useHealthKit() {
     avg: null,
   });
 
-  // Check HealthKit availability
+  // ===== Check HealthKit availability =====
   useEffect(() => {
     if (Platform.OS !== "ios") {
       setIsAvailable(false);
       return;
     }
+
     const checkAvailability = async () => {
       const available = await isHealthDataAvailable();
       setIsAvailable(available);
     };
+
     checkAvailability();
   }, []);
 
-  // Generic permission requester
+  // ===== Request permissions =====
   const requestPermission = async (identifier: QuantityTypeIdentifier) => {
     if (Platform.OS !== "ios") {
       Alert.alert("Unsupported", "HealthKit is only available on iOS.");
       return false;
     }
+
     try {
       await requestAuthorization([], [identifier]);
       return true;
@@ -63,12 +90,13 @@ export function useHealthKit() {
     }
   };
 
-  // Generic fetcher for most recent
+  // ===== Fetch most recent sample =====
   const fetchMostRecent = async (identifier: QuantityTypeIdentifier) => {
     const sample = await getMostRecentQuantitySample(identifier);
     return sample?.quantity ?? null;
   };
 
+  // ===== Fetch last 7 days of samples =====
   const fetchLast7Days = async (identifier: QuantityTypeIdentifier) => {
     const now = new Date();
     const sevenDaysAgo = new Date();
@@ -76,10 +104,7 @@ export function useHealthKit() {
 
     try {
       const samples = await queryQuantitySamples(identifier, {
-        filter: {
-          startDate: sevenDaysAgo,
-          endDate: now,
-        },
+        filter: { startDate: sevenDaysAgo, endDate: now },
         ascending: true,
         limit: 5000,
       });
@@ -89,27 +114,26 @@ export function useHealthKit() {
         return { daily: Array(7).fill(0), avg: 0 };
       }
 
+      // 🔹 Use prioritized device filtering
+      const filteredSamples = filterSamplesByDevicePreference(samples);
+
       Alert.alert(
-        `Fetched ${JSON.stringify(samples)} samples for ${identifier}`
+        `Fetched ${JSON.stringify(filteredSamples)} samples for ${identifier}`
       );
 
-      const iphoneSamples = samples.filter((s) => {
-        const sourceName = s.device?.name?.toLowerCase() ?? "";
-        const model = s.device?.model?.toLowerCase() ?? "";
-        return sourceName.includes("iphone") || model.includes("iphone");
-      });
-
-      if (!iphoneSamples.length) {
-        console.log(`No iPhone samples for ${identifier}`);
+      if (!filteredSamples.length) {
+        console.log(`No Oura/Watch/iPhone samples for ${identifier}`);
         return { daily: Array(7).fill(0), avg: 0 };
       }
 
+      // Group by local day
       const dailyMap: Record<string, number> = {};
-      iphoneSamples.forEach((sample) => {
+      filteredSamples.forEach((sample) => {
         const localDay = new Date(sample.startDate).toLocaleDateString("en-US");
         dailyMap[localDay] = (dailyMap[localDay] ?? 0) + sample.quantity;
       });
 
+      // Build 7-day array (fill missing days with 0)
       const daily: number[] = [];
       for (let i = 0; i < 7; i++) {
         const d = new Date(sevenDaysAgo);
@@ -120,7 +144,7 @@ export function useHealthKit() {
 
       const avg =
         daily.length > 0
-          ? daily.reduce((sum, val) => sum + val, 0) / daily.length
+          ? daily.reduce((a, b) => a + b, 0) / daily.length
           : null;
 
       return { daily, avg };
@@ -134,62 +158,49 @@ export function useHealthKit() {
     }
   };
 
-  // ===== Body Fat =====
+  // ===== Metric-specific fetchers =====
   const fetchBodyFat = async () => {
-    const granted = await requestPermission(
-      "HKQuantityTypeIdentifierBodyFatPercentage"
-    );
-    if (!granted) return;
+    if (!(await requestPermission("HKQuantityTypeIdentifierBodyFatPercentage")))
+      return;
     const value = await fetchMostRecent(
       "HKQuantityTypeIdentifierBodyFatPercentage"
     );
     setBodyFat(value);
   };
 
-  // ===== Heart Rate =====
   const fetchHeartRate = async () => {
-    const granted = await requestPermission(
-      "HKQuantityTypeIdentifierHeartRate"
-    );
-    if (!granted) return;
+    if (!(await requestPermission("HKQuantityTypeIdentifierHeartRate"))) return;
     const value = await fetchLast7Days("HKQuantityTypeIdentifierHeartRate");
     setHeartRate(value);
   };
 
-  // ===== Step Count =====
   const fetchStepCount = async () => {
-    const granted = await requestPermission(
-      "HKQuantityTypeIdentifierStepCount"
-    );
-    if (!granted) return;
+    if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
     const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
     setStepCount(value);
   };
 
-  // ===== Active Energy =====
   const fetchActiveEnergy = async () => {
-    const granted = await requestPermission(
-      "HKQuantityTypeIdentifierActiveEnergyBurned"
-    );
-    if (!granted) return;
+    if (
+      !(await requestPermission("HKQuantityTypeIdentifierActiveEnergyBurned"))
+    )
+      return;
     const value = await fetchLast7Days(
       "HKQuantityTypeIdentifierActiveEnergyBurned"
     );
     setActiveEnergy(value);
   };
 
-  // ===== Flights Climbed =====
   const fetchFlightsClimbed = async () => {
-    const granted = await requestPermission(
-      "HKQuantityTypeIdentifierFlightsClimbed"
-    );
-    if (!granted) return;
+    if (!(await requestPermission("HKQuantityTypeIdentifierFlightsClimbed")))
+      return;
     const value = await fetchLast7Days(
       "HKQuantityTypeIdentifierFlightsClimbed"
     );
     setFlightsClimbed(value);
   };
 
+  // ===== Expose API =====
   return {
     isAvailable,
     bodyFat,
