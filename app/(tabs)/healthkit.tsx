@@ -16,15 +16,7 @@ import { useSharedHealthKit } from "../contexts/healthkit/HealthKitContext";
 import { DailyStats } from "../contexts/healthkit/HealthKitContextTypes";
 
 export default function HealthKitDemo() {
-  const {
-    isAvailable,
-    healthData,
-    fetchBodyFat,
-    fetchHeartRate,
-    fetchStepCount,
-    fetchActiveEnergy,
-    fetchFlightsClimbed,
-  } = useSharedHealthKit();
+  const { isAvailable, healthData, fetchAllHealthData } = useSharedHealthKit();
 
   const [loading, setLoading] = useState(false);
 
@@ -38,13 +30,7 @@ export default function HealthKitDemo() {
     if (useSample) return;
     setLoading(true);
     try {
-      await Promise.all([
-        fetchBodyFat(),
-        fetchHeartRate(),
-        fetchStepCount(),
-        fetchActiveEnergy(),
-        fetchFlightsClimbed(),
-      ]);
+      await fetchAllHealthData();
     } catch (err) {
       console.error("Error fetching HealthKit data:", err);
     } finally {

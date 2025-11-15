@@ -38,6 +38,21 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
         flightsClimbed: flightsClimbed ?? 0,
       };
 
+  const fetchAllHealthData = async () => {
+    if (useSample) return;
+    try {
+      await Promise.all([
+        fetchBodyFat(),
+        fetchHeartRate(),
+        fetchStepCount(),
+        fetchActiveEnergy(),
+        fetchFlightsClimbed(),
+      ]);
+    } catch (err) {
+      console.error("Error fetching HealthKit data:", err);
+    }
+  };
+
   return (
     <HealthKitContext.Provider
       value={{
@@ -48,6 +63,7 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
         fetchStepCount,
         fetchActiveEnergy,
         fetchFlightsClimbed,
+        fetchAllHealthData,
       }}
     >
       {children}

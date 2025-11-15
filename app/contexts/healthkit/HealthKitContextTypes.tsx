@@ -21,6 +21,7 @@ export type HealthKitContextType = {
   fetchStepCount: () => Promise<void>;
   fetchActiveEnergy: () => Promise<void>;
   fetchFlightsClimbed: () => Promise<void>;
+  fetchAllHealthData: () => Promise<void>;
 };
 
 export const defaultContext: HealthKitContextType = {
@@ -37,6 +38,7 @@ export const defaultContext: HealthKitContextType = {
   fetchStepCount: async () => {},
   fetchActiveEnergy: async () => {},
   fetchFlightsClimbed: async () => {},
+  fetchAllHealthData: async () => {},
 };
 
 // Example sample data

@@ -15,16 +15,18 @@ import {
   View,
 } from "react-native";
 
-import { useSession } from "./contexts/auth/ctx"; // ✅ new context
+import { useSession } from "./contexts/auth/ctx";
+import { useSharedHealthKit } from "./contexts/healthkit/HealthKitContext";
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { signIn } = useSession(); // ✅ new function
+  const { signIn } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { fetchAllHealthData } = useSharedHealthKit();
 
   const colors = {
     background: isDark ? "#0d0d0d" : "#f9fafb",
@@ -41,6 +43,7 @@ export default function LoginScreen() {
     try {
       // Pass email and password to signIn
       await signIn(email, password);
+      await fetchAllHealthData();
       router.replace("/"); // navigate to main app
     } catch (err: any) {
       console.error("Sign-in error:", err);
