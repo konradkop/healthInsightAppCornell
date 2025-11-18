@@ -15,22 +15,22 @@ type DailyStats = {
   avg: number | null;
 };
 
-// 🔹 Device priority filter using bundle identifiers
+// 🔹 Device priority filter using source.name
 function filterSamplesByDevicePreference(samples: readonly QuantitySample[]) {
   if (!samples?.length) return [];
 
-  const lower = (val?: string) => val?.toLowerCase() ?? "";
-  const getBundle = (s: any) => lower(s.source?.bundleIdentifier);
+  const lower = (v?: string) => v?.toLowerCase() ?? "";
+  const getName = (s: any) => lower(s.source?.name);
 
-  // Priority order: Oura > Apple Watch > iPhone
+  // Priority: Oura > Apple Watch > iPhone
   const priorities = [
-    { key: "oura", match: "com.ouraring.oura" },
-    { key: "watch", match: "com.apple.watch" },
-    { key: "iphone", match: "com.apple.health" },
+    { key: "oura", match: "oura" },
+    { key: "watch", match: "apple watch" },
+    { key: "iphone", match: "iphone" },
   ];
 
   for (const { match } of priorities) {
-    const filtered = samples.filter((s) => getBundle(s).includes(match));
+    const filtered = samples.filter((s) => getName(s).includes(match));
     if (filtered.length > 0) return filtered;
   }
 
