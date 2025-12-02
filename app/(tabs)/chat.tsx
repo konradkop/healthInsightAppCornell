@@ -33,8 +33,8 @@ export default function Chat() {
     stepCount: healthData.stepCount,
     activeEnergy: healthData.activeEnergy,
     flightsClimbed: healthData.flightsClimbed,
+    sleep: healthData.sleep,
   };
-
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -44,6 +44,7 @@ export default function Chat() {
     setInput("");
 
     // "http://localhost:8000/chat"
+    // https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat
     try {
       const response = await fetch(
         "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat",

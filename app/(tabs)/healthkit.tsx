@@ -22,7 +22,7 @@ export default function HealthKitDemo() {
   const useSample =
     !isAvailable || isAvailable === null || Platform.OS !== "ios";
 
-  const { bodyFat, heartRate, stepCount, activeEnergy, flightsClimbed } =
+  const { bodyFat, heartRate, stepCount, activeEnergy, flightsClimbed, sleep } =
     healthData;
 
   const handleFetchAll = async () => {
@@ -121,6 +121,15 @@ export default function HealthKitDemo() {
                 data={flightsClimbed.daily}
               /> */}
               {renderDailyStats(flightsClimbed)}
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.label}>Sleep</Text>
+              {/* <DailyGiftedChart
+                title="Sleep"
+                data={sleep.daily}
+              /> */}
+              {renderDailyStats(sleep)}
             </View>
           </View>
         </ScrollView>

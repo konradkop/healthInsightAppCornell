@@ -1,8 +1,9 @@
-// hooks/useHealthKit.ts
 import {
+  CategoryTypeIdentifier,
   getMostRecentQuantitySample,
   isHealthDataAvailable,
   QuantityTypeIdentifier,
+  queryCategorySamples,
   queryStatisticsCollectionForQuantity,
   QueryStatisticsResponse,
   requestAuthorization,
@@ -42,7 +43,10 @@ export function useHealthKit() {
     daily: [],
     avg: null,
   });
-
+  const [sleep, setSleep] = useState<DailyStats>({
+    daily: [],
+    avg: null,
+  });
   // ===== Check HealthKit availability =====
   useEffect(() => {
     if (Platform.OS !== "ios") {
@@ -73,6 +77,31 @@ export function useHealthKit() {
       return true;
     } catch (err) {
       console.error(`Permission request failed for ${identifier}:`, err);
+      Alert.alert(`Permission request failed for ${identifier}`);
+      return false;
+    }
+  };
+
+  const requestCategoryPermission = async (
+    identifier: CategoryTypeIdentifier
+  ) => {
+    if (Platform.OS !== "ios") {
+      Alert.alert("Unsupported", "HealthKit is only available on iOS.");
+      return false;
+    }
+
+    try {
+      await requestAuthorization({
+        toRead: [identifier], // category types only need read access
+        toShare: [],
+      });
+
+      return true;
+    } catch (err) {
+      console.error(
+        `Category permission request failed for ${identifier}:`,
+        err
+      );
       Alert.alert(`Permission request failed for ${identifier}`);
       return false;
     }
@@ -205,6 +234,71 @@ export function useHealthKit() {
     }
   };
 
+  // separate funciton for  the CATEGORY fetchLast7Days
+  const fetchLast7DaysCategory = async (
+    identifier: CategoryTypeIdentifier
+  ): Promise<{ daily: number[]; avg: number }> => {
+    const today = new Date();
+    const anchor = new Date(today);
+    anchor.setHours(0, 0, 0, 0); // midnight anchor
+
+    try {
+      const start = new Date(anchor);
+      start.setDate(start.getDate() - 6);
+
+      // Fetch samples for the last 7 days
+      const samples = await queryCategorySamples(identifier, {
+        filter: {
+          startDate: start,
+          endDate: today,
+        },
+        ascending: true,
+      });
+
+      if (!Array.isArray(samples)) {
+        return { daily: Array(7).fill(0), avg: 0 };
+      }
+
+      const dailyMinutes = Array(7).fill(0);
+
+      samples.forEach((sample) => {
+        if (!sample?.startDate || !sample?.endDate) return;
+
+        const startDate = new Date(sample.startDate);
+        const endDate = new Date(sample.endDate);
+
+        const durationMin = (endDate.getTime() - startDate.getTime()) / 60000;
+        if (!Number.isFinite(durationMin) || durationMin <= 0) return;
+
+        // Determine which day bucket (0–6)
+        const dayIndex =
+          6 -
+          Math.floor(
+            (anchor.getTime() - startDate.getTime()) / (24 * 3600 * 1000)
+          );
+
+        if (dayIndex >= 0 && dayIndex < 7) {
+          dailyMinutes[dayIndex] += durationMin;
+        }
+      });
+
+      const avg =
+        dailyMinutes.length > 0
+          ? dailyMinutes.reduce((a, b) => a + b, 0) / dailyMinutes.length
+          : 0;
+
+      return { daily: dailyMinutes, avg };
+    } catch (err) {
+      Alert.alert(
+        `Error fetching category stats for ${identifier}:`,
+        JSON.stringify(err)
+      );
+      console.error(`Error fetching category stats for ${identifier}:`, err);
+
+      return { daily: Array(7).fill(0), avg: 0 };
+    }
+  };
+
   // ===== Metric-specific fetchers =====
   const fetchBodyFat = async () => {
     if (!(await requestPermission("HKQuantityTypeIdentifierBodyFatPercentage")))
@@ -250,6 +344,19 @@ export function useHealthKit() {
     setFlightsClimbed(value);
   };
 
+  const fetchSleep = async () => {
+    if (
+      !(await requestCategoryPermission(
+        "HKCategoryTypeIdentifierSleepAnalysis"
+      ))
+    )
+      return;
+    const value = await fetchLast7DaysCategory(
+      "HKCategoryTypeIdentifierSleepAnalysis"
+    );
+    setSleep(value);
+  };
+
   // ===== Expose API =====
   return {
     isAvailable,
@@ -258,10 +365,12 @@ export function useHealthKit() {
     stepCount,
     activeEnergy,
     flightsClimbed,
+    sleep,
     fetchBodyFat,
     fetchHeartRate,
     fetchStepCount,
     fetchActiveEnergy,
     fetchFlightsClimbed,
+    fetchSleep,
   };
 }

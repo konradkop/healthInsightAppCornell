@@ -11,6 +11,7 @@ export type HealthData = {
   stepCount: DailyStats;
   activeEnergy: DailyStats;
   flightsClimbed: DailyStats;
+  sleep: DailyStats;
 };
 
 export type HealthKitContextType = {
@@ -22,6 +23,7 @@ export type HealthKitContextType = {
   fetchActiveEnergy: () => Promise<void>;
   fetchFlightsClimbed: () => Promise<void>;
   fetchAllHealthData: () => Promise<void>;
+  fetchSleep: () => Promise<void>;
 };
 
 export const defaultContext: HealthKitContextType = {
@@ -32,6 +34,7 @@ export const defaultContext: HealthKitContextType = {
     stepCount: { daily: [], avg: null },
     activeEnergy: { daily: [], avg: null },
     flightsClimbed: { daily: [], avg: null },
+    sleep: { daily: [], avg: null },
   },
   fetchBodyFat: async () => {},
   fetchHeartRate: async () => {},
@@ -39,6 +42,7 @@ export const defaultContext: HealthKitContextType = {
   fetchActiveEnergy: async () => {},
   fetchFlightsClimbed: async () => {},
   fetchAllHealthData: async () => {},
+  fetchSleep: async () => {},
 };
 
 // Example sample data
@@ -51,4 +55,5 @@ export const sampleData: HealthData = {
   },
   activeEnergy: { daily: [250, 300, 280, 200, 320, 310, 290], avg: 278.57 },
   flightsClimbed: { daily: [10, 12, 8, 15, 9, 11, 10], avg: 10.71 },
+  sleep: { daily: [9, 8, 8, 9, 9, 8, 9], avg: 8.5 },
 };

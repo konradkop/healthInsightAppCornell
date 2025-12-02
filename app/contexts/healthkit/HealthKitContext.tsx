@@ -18,11 +18,13 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
     stepCount,
     activeEnergy,
     flightsClimbed,
+    sleep,
     fetchBodyFat,
     fetchHeartRate,
     fetchStepCount,
     fetchActiveEnergy,
     fetchFlightsClimbed,
+    fetchSleep,
   } = useHealthKit();
 
   const useSample =
@@ -36,6 +38,7 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
         stepCount: stepCount ?? 0,
         activeEnergy: activeEnergy ?? 0,
         flightsClimbed: flightsClimbed ?? 0,
+        sleep: sleep ?? 0,
       };
 
   const fetchAllHealthData = async () => {
@@ -47,6 +50,7 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
         fetchHeartRate(),
         fetchActiveEnergy(),
         fetchFlightsClimbed(),
+        fetchSleep(),
       ]);
     } catch (err) {
       console.error("Error fetching HealthKit data:", err);
@@ -64,6 +68,7 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
         fetchActiveEnergy,
         fetchFlightsClimbed,
         fetchAllHealthData,
+        fetchSleep,
       }}
     >
       {children}
