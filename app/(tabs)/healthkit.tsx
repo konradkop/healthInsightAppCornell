@@ -1,8 +1,7 @@
 import { CenteredContainer } from "@/components/centered-component";
 import { TitleText } from "@/components/title-text";
 import { Colors } from "@/constants/theme";
-
-import { DailyGiftedChart } from "@/components/daily-chart";
+// import { DailyGiftedChart } from "@/components/daily-chart";
 import React, { useState } from "react";
 import {
   Button,
@@ -91,36 +90,36 @@ export default function HealthKitDemo() {
 
             <View style={styles.section}>
               <Text style={styles.label}>Heart Rate</Text>
-              <DailyGiftedChart
+              {/* <DailyGiftedChart
                 title="Heart Rate"
                 data={heartRate.daily}
                 unit="bpm"
-              />
+              /> */}
               {renderDailyStats(heartRate, "bpm")}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Step Count</Text>
-              <DailyGiftedChart title="Step Count" data={stepCount.daily} />
+              {/* <DailyGiftedChart title="Step Count" data={stepCount.daily} /> */}
               {renderDailyStats(stepCount)}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Active Energy</Text>
-              <DailyGiftedChart
+              {/* <DailyGiftedChart
                 title="Active Energy"
                 data={activeEnergy.daily}
                 unit="kcal"
-              />
+              /> */}
               {renderDailyStats(activeEnergy, "kcal")}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Flights Climbed</Text>
-              <DailyGiftedChart
+              {/* <DailyGiftedChart
                 title="Flights Climbed"
                 data={flightsClimbed.daily}
-              />
+              /> */}
               {renderDailyStats(flightsClimbed)}
             </View>
           </View>

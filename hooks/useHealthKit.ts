@@ -78,6 +78,14 @@ export function useHealthKit() {
     const today = new Date();
     const daily: number[] = [];
 
+    // this fetchest the most recent sample (from the function above)
+    // the reason i do this is the check if this healthkit info exists on the clients machine
+    // if this returns null, we know it doesn't exist and we dip out early
+    const validQueryCheckSample = await fetchMostRecent(identifier);
+    if (!validQueryCheckSample) {
+      return { daily: Array(7).fill(0), avg: 0 };
+    }
+
     try {
       for (let i = 6; i >= 0; i--) {
         const dayStart = new Date(today);
