@@ -96,7 +96,7 @@ export function useHealthKit() {
         );
 
         let value = 0;
-        if (stats?.sumQuantity != null && stats.sumQuantity.quantity) {
+        if (stats && stats?.sumQuantity != null && stats.sumQuantity.quantity) {
           value = stats.sumQuantity.quantity;
         }
 
@@ -115,7 +115,7 @@ export function useHealthKit() {
         `Error fetching daily stats for ${identifier}`,
         JSON.stringify(err)
       );
-      return { daily: [], avg: null };
+      return { daily: Array(7).fill(0), avg: 0 };
     }
   };
 

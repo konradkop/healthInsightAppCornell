@@ -44,7 +44,7 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
       await Promise.all([
         fetchBodyFat(),
         fetchStepCount(),
-        // fetchHeartRate(),
+        fetchHeartRate(),
         fetchActiveEnergy(),
         fetchFlightsClimbed(),
       ]);
