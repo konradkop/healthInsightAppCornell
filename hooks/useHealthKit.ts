@@ -79,13 +79,15 @@ export function useHealthKit() {
     const daily: number[] = [];
 
     try {
+      Alert.alert(`Starting to fetch last 7 days`);
       for (let i = 6; i >= 0; i--) {
         const dayStart = new Date(today);
         dayStart.setHours(0, 0, 0, 0);
         dayStart.setDate(today.getDate() - i);
-
         const dayEnd = new Date(dayStart);
         dayEnd.setHours(23, 59, 59, 999);
+        Alert.alert(`Day start is ${dayStart}`);
+        Alert.alert(`Day end is ${dayEnd}`);
 
         // query the cumulative sum for this single day
         const stats = await queryStatisticsForQuantity(
@@ -95,7 +97,10 @@ export function useHealthKit() {
             filter: { startDate: dayStart, endDate: dayEnd },
           }
         );
-
+        Alert.alert(
+          `Fetched stats for ${identifier} on day ${dayStart} to day ${dayEnd}`,
+          JSON.stringify(stats)
+        );
         let value = 0;
 
         if (stats?.sumQuantity != null) {
