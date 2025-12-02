@@ -110,7 +110,10 @@ export function useHealthKit() {
         daily.push(value);
       }
 
-      const avg = daily.reduce((a, b) => a + b, 0) / daily.length;
+      const avg =
+        daily.length > 0
+          ? daily.reduce((a, b) => a + b, 0) / daily.length
+          : null;
 
       return { daily, avg };
     } catch (err) {

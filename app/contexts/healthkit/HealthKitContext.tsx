@@ -43,10 +43,10 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
     try {
       await Promise.all([
         fetchBodyFat(),
-        fetchHeartRate(),
-        fetchStepCount(),
-        fetchActiveEnergy(),
-        fetchFlightsClimbed(),
+        // fetchHeartRate(),
+        // fetchStepCount(),
+        // fetchActiveEnergy(),
+        // fetchFlightsClimbed(),
       ]);
     } catch (err) {
       console.error("Error fetching HealthKit data:", err);
