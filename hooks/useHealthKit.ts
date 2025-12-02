@@ -216,9 +216,10 @@ export function useHealthKit() {
   };
 
   const fetchHeartRate = async () => {
-    if (!(await requestPermission("HKQuantityTypeIdentifierHeartRate"))) return;
+    if (!(await requestPermission("HKQuantityTypeIdentifierRestingHeartRate")))
+      return;
     const value = await fetchLast7DaysAverage(
-      "HKQuantityTypeIdentifierHeartRate"
+      "HKQuantityTypeIdentifierRestingHeartRate"
     );
     setHeartRate(value);
   };
