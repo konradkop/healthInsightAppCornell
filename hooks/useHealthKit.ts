@@ -85,7 +85,6 @@ export function useHealthKit() {
   };
 
   const fetchLast7Days = async (identifier: QuantityTypeIdentifier) => {
-    Alert.alert("fetch last 7 days hit");
     const today = new Date();
     const anchor = new Date(today);
     anchor.setHours(0, 0, 0, 0); // anchor date required - midnight
@@ -95,10 +94,8 @@ export function useHealthKit() {
     // if this returns null, we know it doesn't exist and we dip out early
     const validQueryCheckSample = await fetchMostRecent(identifier);
     if (validQueryCheckSample === null) {
-      Alert.alert("fetch most recent is null, app crashes here");
       return { daily: Array(7).fill(0), avg: 0 };
     }
-    Alert.alert("Passes fetch most recent");
     try {
       const start = new Date(anchor);
       start.setDate(start.getDate() - 6);
@@ -115,11 +112,6 @@ export function useHealthKit() {
             endDate: today,
           },
         }
-      );
-      Alert.alert(
-        `Passes queryStatisticsCollectionForQuantity, results look like: ${JSON.stringify(
-          results
-        )}`
       );
 
       const safeResults: readonly QueryStatisticsResponse[] = Array.isArray(
@@ -140,7 +132,6 @@ export function useHealthKit() {
         return Number.isFinite(value) && value >= 0 ? value : 0;
       });
 
-      // Compute avg safely
       const avg =
         daily.length > 0 ? daily.reduce((a, b) => a + b, 0) / daily.length : 0;
 
@@ -151,6 +142,65 @@ export function useHealthKit() {
         JSON.stringify(err)
       );
       console.error(`Error fetching daily stats for ${identifier}:`, err);
+      return { daily: Array(7).fill(0), avg: 0 };
+    }
+  };
+
+  // separate funciton then the cumulatvie fetchLast7Days
+  const fetchLast7DaysAverage = async (
+    identifier: QuantityTypeIdentifier
+  ): Promise<DailyStats> => {
+    const today = new Date();
+    const anchor = new Date(today);
+    anchor.setHours(0, 0, 0, 0);
+
+    const valid = await fetchMostRecent(identifier);
+    if (valid === null) {
+      return { daily: Array(7).fill(0), avg: 0 };
+    }
+
+    try {
+      const start = new Date(anchor);
+      start.setDate(start.getDate() - 6);
+
+      const results = await queryStatisticsCollectionForQuantity(
+        identifier,
+        ["discreteAverage"],
+        anchor,
+        { day: 1 },
+        {
+          filter: {
+            startDate: start,
+            endDate: today,
+          },
+        }
+      );
+
+      const safeResults = Array.isArray(results) ? results : [];
+
+      const daily = safeResults.map((item) => {
+        if (!item || typeof item !== "object") return 0;
+
+        const avgQ = item.averageQuantity;
+        if (!avgQ || typeof avgQ.quantity !== "number") return 0;
+
+        const value = avgQ.quantity;
+        return Number.isFinite(value) && value >= 0 ? value : 0;
+      });
+
+      const avg =
+        daily.length > 0 ? daily.reduce((a, b) => a + b, 0) / daily.length : 0;
+
+      return { daily, avg };
+    } catch (err) {
+      console.error(
+        `Error fetching average daily stats for ${identifier}:`,
+        err
+      );
+      Alert.alert(
+        `Error fetching average daily stats for ${identifier}`,
+        JSON.stringify(err)
+      );
       return { daily: Array(7).fill(0), avg: 0 };
     }
   };
@@ -167,12 +217,13 @@ export function useHealthKit() {
 
   const fetchHeartRate = async () => {
     if (!(await requestPermission("HKQuantityTypeIdentifierHeartRate"))) return;
-    const value = await fetchLast7Days("HKQuantityTypeIdentifierHeartRate");
+    const value = await fetchLast7DaysAverage(
+      "HKQuantityTypeIdentifierHeartRate"
+    );
     setHeartRate(value);
   };
 
   const fetchStepCount = async () => {
-    Alert.alert("fetch Step count hit");
     if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
     const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
     setStepCount(value);
