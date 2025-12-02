@@ -3,7 +3,7 @@ import {
   getMostRecentQuantitySample,
   isHealthDataAvailable,
   QuantityTypeIdentifier,
-  queryStatisticsForQuantity,
+  queryStatisticsCollectionForQuantity,
   requestAuthorization,
 } from "@kingstinct/react-native-healthkit";
 import { useEffect, useState } from "react";
@@ -74,9 +74,14 @@ export function useHealthKit() {
     const sample = await getMostRecentQuantitySample(identifier);
     return sample?.quantity ?? null;
   };
+
   const fetchLast7Days = async (identifier: QuantityTypeIdentifier) => {
     const today = new Date();
-    const daily: number[] = [];
+    const anchor = new Date(today);
+    anchor.setHours(0, 0, 0, 0); // anchor date required - midnight
+
+    // Interval of 1 day
+    const intervalComponents = { day: 1 };
 
     // this fetchest the most recent sample (from the function above)
     // the reason i do this is the check if this healthkit info exists on the clients machine
@@ -87,42 +92,30 @@ export function useHealthKit() {
     }
 
     try {
-      for (let i = 6; i >= 0; i--) {
-        const dayStart = new Date(today);
-        dayStart.setHours(0, 0, 0, 0);
-        dayStart.setDate(today.getDate() - i);
-        const dayEnd = new Date(dayStart);
-        dayEnd.setHours(23, 59, 59, 999);
-
-        // query the cumulative sum for this single day
-        const stats = await queryStatisticsForQuantity(
-          identifier,
-          ["cumulativeSum"],
-          {
-            filter: { startDate: dayStart, endDate: dayEnd },
-          }
-        );
-
-        let value = 0;
-        if (stats && stats?.sumQuantity != null && stats.sumQuantity.quantity) {
-          value = stats.sumQuantity.quantity;
+      const results = await queryStatisticsCollectionForQuantity(
+        identifier,
+        ["cumulativeSum"],
+        anchor,
+        intervalComponents,
+        {
+          filter: {
+            startDate: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+            endDate: today,
+          },
         }
+      );
 
-        daily.push(value);
-      }
+      // Results is an array: QueryStatisticsResponse[]
+      const daily: number[] = results.map(
+        (item) => item?.sumQuantity?.quantity ?? 0
+      );
 
       const avg =
-        daily.length > 0
-          ? daily.reduce((a, b) => a + b, 0) / daily.length
-          : null;
+        daily.length > 0 ? daily.reduce((a, b) => a + b, 0) / daily.length : 0;
 
       return { daily, avg };
     } catch (err) {
       console.error(`Error fetching daily stats for ${identifier}:`, err);
-      Alert.alert(
-        `Error fetching daily stats for ${identifier}`,
-        JSON.stringify(err)
-      );
       return { daily: Array(7).fill(0), avg: 0 };
     }
   };
