@@ -4,6 +4,7 @@ import {
   isHealthDataAvailable,
   QuantityTypeIdentifier,
   queryStatisticsCollectionForQuantity,
+  QueryStatisticsResponse,
   requestAuthorization,
 } from "@kingstinct/react-native-healthkit";
 import { useEffect, useState } from "react";
@@ -12,6 +13,14 @@ import { Alert, Platform } from "react-native";
 type DailyStats = {
   daily: number[];
   avg: number | null;
+};
+
+const UNITS: Partial<Record<QuantityTypeIdentifier, string>> = {
+  HKQuantityTypeIdentifierStepCount: "count",
+  HKQuantityTypeIdentifierHeartRate: "count/min",
+  HKQuantityTypeIdentifierActiveEnergyBurned: "kcal",
+  HKQuantityTypeIdentifierFlightsClimbed: "count",
+  HKQuantityTypeIdentifierBodyFatPercentage: "%",
 };
 
 export function useHealthKit() {
@@ -76,45 +85,71 @@ export function useHealthKit() {
   };
 
   const fetchLast7Days = async (identifier: QuantityTypeIdentifier) => {
+    Alert.alert("fetch last 7 days hit");
     const today = new Date();
     const anchor = new Date(today);
     anchor.setHours(0, 0, 0, 0); // anchor date required - midnight
-
-    // Interval of 1 day
-    const intervalComponents = { day: 1 };
 
     // this fetchest the most recent sample (from the function above)
     // the reason i do this is the check if this healthkit info exists on the clients machine
     // if this returns null, we know it doesn't exist and we dip out early
     const validQueryCheckSample = await fetchMostRecent(identifier);
-    if (!validQueryCheckSample) {
+    if (validQueryCheckSample === null) {
+      Alert.alert("fetch most recent is null, app crashes here");
       return { daily: Array(7).fill(0), avg: 0 };
     }
-
+    Alert.alert("Passes fetch most recent");
     try {
+      const start = new Date(anchor);
+      start.setDate(start.getDate() - 6);
+
       const results = await queryStatisticsCollectionForQuantity(
         identifier,
         ["cumulativeSum"],
         anchor,
-        intervalComponents,
+        { day: 1 },
         {
+          unit: UNITS[identifier],
           filter: {
-            startDate: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+            startDate: start,
             endDate: today,
           },
         }
       );
-
-      // Results is an array: QueryStatisticsResponse[]
-      const daily: number[] = results.map(
-        (item) => item?.sumQuantity?.quantity ?? 0
+      Alert.alert(
+        `Passes queryStatisticsCollectionForQuantity, results look like: ${JSON.stringify(
+          results
+        )}`
       );
 
+      const safeResults: readonly QueryStatisticsResponse[] = Array.isArray(
+        results
+      )
+        ? results
+        : [];
+
+      const daily: number[] = safeResults.map((item) => {
+        if (!item || typeof item !== "object") return 0;
+
+        const sum = item?.sumQuantity;
+
+        if (!sum || typeof sum?.quantity !== "number") return 0;
+
+        const value = sum?.quantity || 0;
+
+        return Number.isFinite(value) && value >= 0 ? value : 0;
+      });
+
+      // Compute avg safely
       const avg =
         daily.length > 0 ? daily.reduce((a, b) => a + b, 0) / daily.length : 0;
 
       return { daily, avg };
     } catch (err) {
+      Alert.alert(
+        `Error fetching daily stats for ${identifier}:`,
+        JSON.stringify(err)
+      );
       console.error(`Error fetching daily stats for ${identifier}:`, err);
       return { daily: Array(7).fill(0), avg: 0 };
     }
@@ -137,6 +172,7 @@ export function useHealthKit() {
   };
 
   const fetchStepCount = async () => {
+    Alert.alert("fetch Step count hit");
     if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
     const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
     setStepCount(value);
