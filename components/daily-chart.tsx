@@ -15,11 +15,9 @@ export function DailyGiftedChart({ title, data, unit }: DailyGiftedChartProps) {
     label: `Day ${index + 1}`,
   }));
 
-  const average = data.reduce((a, b) => a + b, 0) / data.length;
-
   const screenWidth = Dimensions.get("window").width;
   const SCREEN_WIDTH =
-    Platform.OS === "ios" ? screenWidth - 150 : screenWidth - 1100;
+    Platform.OS === "ios" ? screenWidth - 10 : screenWidth - 10;
   const spacing = SCREEN_WIDTH / chartData.length;
 
   return (
@@ -43,9 +41,6 @@ export function DailyGiftedChart({ title, data, unit }: DailyGiftedChartProps) {
       />
 
       <View style={styles.footer}>
-        <Text style={styles.avg}>
-          Avg: {average.toFixed(1)} {unit ?? ""}
-        </Text>
         <Text style={styles.note}>Last {data.length} days</Text>
       </View>
     </View>

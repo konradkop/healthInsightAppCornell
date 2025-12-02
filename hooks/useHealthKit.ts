@@ -75,20 +75,16 @@ export function useHealthKit() {
     return sample?.quantity ?? null;
   };
   const fetchLast7Days = async (identifier: QuantityTypeIdentifier) => {
-    Alert.alert("fetch first 7 days hit");
     const today = new Date();
     const daily: number[] = [];
 
     try {
-      Alert.alert(`Starting to fetch last 7 days`);
       for (let i = 6; i >= 0; i--) {
         const dayStart = new Date(today);
         dayStart.setHours(0, 0, 0, 0);
         dayStart.setDate(today.getDate() - i);
         const dayEnd = new Date(dayStart);
         dayEnd.setHours(23, 59, 59, 999);
-        Alert.alert(`Day start is ${dayStart}`);
-        Alert.alert(`Day end is ${dayEnd}`);
 
         // query the cumulative sum for this single day
         const stats = await queryStatisticsForQuantity(
@@ -98,12 +94,8 @@ export function useHealthKit() {
             filter: { startDate: dayStart, endDate: dayEnd },
           }
         );
-        Alert.alert(
-          `Fetched stats for ${identifier} on day ${dayStart} to day ${dayEnd}`,
-          JSON.stringify(stats)
-        );
+
         let value = 0;
-        Alert.alert(`Stats is ${JSON.stringify(stats)}`);
         if (stats?.sumQuantity != null && stats.sumQuantity.quantity) {
           value = stats.sumQuantity.quantity;
         }
@@ -144,7 +136,6 @@ export function useHealthKit() {
   };
 
   const fetchStepCount = async () => {
-    Alert.alert("fetch step count hit");
     if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
     const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
     setStepCount(value);

@@ -45,8 +45,8 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
         fetchBodyFat(),
         fetchStepCount(),
         // fetchHeartRate(),
-        // fetchActiveEnergy(),
-        // fetchFlightsClimbed(),
+        fetchActiveEnergy(),
+        fetchFlightsClimbed(),
       ]);
     } catch (err) {
       console.error("Error fetching HealthKit data:", err);
