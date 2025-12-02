@@ -75,6 +75,7 @@ export function useHealthKit() {
     return sample?.quantity ?? null;
   };
   const fetchLast7Days = async (identifier: QuantityTypeIdentifier) => {
+    Alert.alert("fetch first 7 days hit");
     const today = new Date();
     const daily: number[] = [];
 
@@ -102,8 +103,8 @@ export function useHealthKit() {
           JSON.stringify(stats)
         );
         let value = 0;
-
-        if (stats?.sumQuantity != null) {
+        Alert.alert(`Stats is ${JSON.stringify(stats)}`);
+        if (stats?.sumQuantity != null && stats.sumQuantity.quantity) {
           value = stats.sumQuantity.quantity;
         }
 
@@ -143,6 +144,7 @@ export function useHealthKit() {
   };
 
   const fetchStepCount = async () => {
+    Alert.alert("fetch step count hit");
     if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
     const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
     setStepCount(value);
