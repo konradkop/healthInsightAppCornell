@@ -2,9 +2,8 @@
 import {
   getMostRecentQuantitySample,
   isHealthDataAvailable,
-  QuantitySample,
   QuantityTypeIdentifier,
-  queryQuantitySamples,
+  queryStatisticsForQuantity,
   requestAuthorization,
 } from "@kingstinct/react-native-healthkit";
 import { useEffect, useState } from "react";
@@ -14,29 +13,6 @@ type DailyStats = {
   daily: number[];
   avg: number | null;
 };
-
-// 🔹 Device priority filter using source.name
-function filterSamplesByDevicePreference(samples: readonly QuantitySample[]) {
-  if (!samples?.length) return [];
-
-  const lower = (v?: string) => v?.toLowerCase() ?? "";
-  const getName = (s: any) => lower(s.source?.name);
-
-  // Priority: Oura > Apple Watch > iPhone
-  const priorities = [
-    { key: "oura", match: "oura" },
-    { key: "watch", match: "apple watch" },
-    { key: "iphone", match: "iphone" },
-  ];
-
-  for (const { match } of priorities) {
-    const filtered = samples.filter((s) => getName(s).includes(match));
-    if (filtered.length > 0) return filtered;
-  }
-
-  // fallback — if no recognized sources
-  return samples;
-}
 
 export function useHealthKit() {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
@@ -81,7 +57,10 @@ export function useHealthKit() {
     }
 
     try {
-      await requestAuthorization([], [identifier]);
+      await requestAuthorization({
+        toRead: [identifier],
+        toShare: [],
+      });
       return true;
     } catch (err) {
       console.error(`Permission request failed for ${identifier}:`, err);
@@ -95,63 +74,44 @@ export function useHealthKit() {
     const sample = await getMostRecentQuantitySample(identifier);
     return sample?.quantity ?? null;
   };
-
-  // ===== Fetch last 7 days of samples =====
   const fetchLast7Days = async (identifier: QuantityTypeIdentifier) => {
-    const now = new Date();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(now.getDate() - 6);
+    const today = new Date();
+    const daily: number[] = [];
 
     try {
-      const samples = await queryQuantitySamples(identifier, {
-        filter: { startDate: sevenDaysAgo, endDate: now },
-        ascending: true,
-        limit: 7000,
-      });
+      for (let i = 6; i >= 0; i--) {
+        const dayStart = new Date(today);
+        dayStart.setHours(0, 0, 0, 0);
+        dayStart.setDate(today.getDate() - i);
 
-      if (!samples?.length) {
-        console.log(`No samples for ${identifier}`);
-        return { daily: Array(7).fill(0), avg: 0 };
+        const dayEnd = new Date(dayStart);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        // query the cumulative sum for this single day
+        const stats = await queryStatisticsForQuantity(
+          identifier,
+          ["cumulativeSum"],
+          {
+            filter: { startDate: dayStart, endDate: dayEnd },
+          }
+        );
+
+        let value = 0;
+
+        if (stats?.sumQuantity != null) {
+          value = stats.sumQuantity.quantity;
+        }
+
+        daily.push(value);
       }
 
-      // 🔹 Use prioritized device filtering
-      const filteredSamples = filterSamplesByDevicePreference(samples);
-
-      Alert.alert(
-        `Fetched ${JSON.stringify(filteredSamples)} samples for ${identifier}`
-      );
-
-      if (!filteredSamples.length) {
-        console.log(`No Oura/Watch/iPhone samples for ${identifier}`);
-        return { daily: Array(7).fill(0), avg: 0 };
-      }
-
-      // Group by local day
-      const dailyMap: Record<string, number> = {};
-      filteredSamples.forEach((sample) => {
-        const localDay = new Date(sample.startDate).toLocaleDateString("en-US");
-        dailyMap[localDay] = (dailyMap[localDay] ?? 0) + sample.quantity;
-      });
-
-      // Build 7-day array (fill missing days with 0)
-      const daily: number[] = [];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(sevenDaysAgo);
-        d.setDate(sevenDaysAgo.getDate() + i);
-        const key = d.toLocaleDateString("en-US");
-        daily.push(dailyMap[key] ?? 0);
-      }
-
-      const avg =
-        daily.length > 0
-          ? daily.reduce((a, b) => a + b, 0) / daily.length
-          : null;
+      const avg = daily.reduce((a, b) => a + b, 0) / daily.length;
 
       return { daily, avg };
     } catch (err) {
-      console.error(`Error fetching 7-day samples for ${identifier}:`, err);
+      console.error(`Error fetching daily stats for ${identifier}:`, err);
       Alert.alert(
-        `Error fetching 7-day samples for ${identifier}`,
+        `Error fetching daily stats for ${identifier}`,
         JSON.stringify(err)
       );
       return { daily: [], avg: null };
