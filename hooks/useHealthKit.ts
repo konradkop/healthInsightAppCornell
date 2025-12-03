@@ -241,17 +241,14 @@ export function useHealthKit() {
   ): Promise<{ daily: number[]; avg: number }> => {
     const today = new Date();
     const anchor = new Date(today);
-    anchor.setHours(0, 0, 0, 0);
+    anchor.setHours(0, 0, 0, 0); // today at midnight
 
     try {
       const start = new Date(anchor);
-      start.setDate(start.getDate() - 6);
+      start.setDate(start.getDate() - 6); // 7-day window (inclusive)
 
       const samples = await queryCategorySamples(identifier, {
-        filter: {
-          startDate: start,
-          endDate: today,
-        },
+        filter: { startDate: start, endDate: today },
         ascending: true,
       });
 
@@ -260,49 +257,61 @@ export function useHealthKit() {
       }
 
       const SLEEP_STAGES = new Set([
-        CategoryValueSleepAnalysis.asleepUnspecified, // 1
-        CategoryValueSleepAnalysis.asleepCore, // 3
-        CategoryValueSleepAnalysis.asleepDeep, // 4
-        CategoryValueSleepAnalysis.asleepREM, // 5
+        CategoryValueSleepAnalysis.asleepCore,
+        CategoryValueSleepAnalysis.asleepDeep,
+        CategoryValueSleepAnalysis.asleepREM,
       ]);
 
       const dailyMinutes = Array(7).fill(0);
 
-      for (const sample of samples) {
-        if (!sample?.startDate || !sample?.endDate) continue;
+      for (const s of samples) {
+        if (!s?.startDate || !s?.endDate) continue;
+        if (!SLEEP_STAGES.has(s.value)) continue;
 
-        // 🎯 ONLY process detailed sleep stage samples
-        if (!SLEEP_STAGES.has(sample.value)) continue;
+        let startDate = new Date(s.startDate);
+        let endDate = new Date(s.endDate);
 
-        const startDate = new Date(sample.startDate);
-        const endDate = new Date(sample.endDate);
+        if (endDate <= startDate) continue;
 
-        const minutes = (endDate.getTime() - startDate.getTime()) / 60000;
-        if (!Number.isFinite(minutes) || minutes <= 0) continue;
+        // Clamp to window
+        if (endDate < start || startDate > today) continue;
+        if (startDate < start) startDate = start;
+        if (endDate > today) endDate = today;
 
-        // Which day bucket the sample belongs in
-        const dayIndex =
-          6 -
-          Math.floor(
-            (anchor.getTime() - startDate.getTime()) / (24 * 3600 * 1000)
-          );
+        // Split interval across days
+        let cur = new Date(startDate);
 
-        if (dayIndex >= 0 && dayIndex < 7) {
-          dailyMinutes[dayIndex] += minutes;
+        while (cur < endDate) {
+          const dayStart = new Date(cur);
+          dayStart.setHours(0, 0, 0, 0);
+
+          const nextDay = new Date(dayStart);
+          nextDay.setDate(nextDay.getDate() + 1);
+
+          const segmentEnd = nextDay < endDate ? nextDay : endDate;
+          const minutes = (segmentEnd.getTime() - cur.getTime()) / 60000;
+
+          if (minutes > 0) {
+            const daysAgo = Math.floor(
+              (anchor.getTime() - dayStart.getTime()) / 86400000
+            );
+            const index = 6 - daysAgo;
+
+            if (index >= 0 && index < 7) {
+              dailyMinutes[index] += minutes;
+            }
+          }
+
+          cur = segmentEnd;
         }
       }
 
-      const avg =
-        dailyMinutes.reduce((acc, v) => acc + v, 0) / dailyMinutes.length;
+      const dailyHours = dailyMinutes.map((m) => m / 60);
+      const avg = dailyHours.reduce((a, b) => a + b, 0) / dailyHours.length;
 
-      return { daily: dailyMinutes, avg };
+      return { daily: dailyHours, avg };
     } catch (err) {
-      Alert.alert(
-        `Error fetching category stats for ${identifier}:`,
-        JSON.stringify(err)
-      );
-      console.error(`Error fetching category stats for ${identifier}:`, err);
-
+      console.error("fetchLast7DaysCategory error:", err);
       return { daily: Array(7).fill(0), avg: 0 };
     }
   };
