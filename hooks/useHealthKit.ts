@@ -1,5 +1,6 @@
 import {
   CategoryTypeIdentifier,
+  CategoryValueSleepAnalysis,
   getMostRecentQuantitySample,
   isHealthDataAvailable,
   QuantityTypeIdentifier,
@@ -240,13 +241,12 @@ export function useHealthKit() {
   ): Promise<{ daily: number[]; avg: number }> => {
     const today = new Date();
     const anchor = new Date(today);
-    anchor.setHours(0, 0, 0, 0); // midnight anchor
+    anchor.setHours(0, 0, 0, 0);
 
     try {
       const start = new Date(anchor);
       start.setDate(start.getDate() - 6);
 
-      // Fetch samples for the last 7 days
       const samples = await queryCategorySamples(identifier, {
         filter: {
           startDate: start,
@@ -259,18 +259,28 @@ export function useHealthKit() {
         return { daily: Array(7).fill(0), avg: 0 };
       }
 
+      const SLEEP_STAGES = new Set([
+        CategoryValueSleepAnalysis.asleepUnspecified, // 1
+        CategoryValueSleepAnalysis.asleepCore, // 3
+        CategoryValueSleepAnalysis.asleepDeep, // 4
+        CategoryValueSleepAnalysis.asleepREM, // 5
+      ]);
+
       const dailyMinutes = Array(7).fill(0);
 
-      samples.forEach((sample) => {
-        if (!sample?.startDate || !sample?.endDate) return;
+      for (const sample of samples) {
+        if (!sample?.startDate || !sample?.endDate) continue;
+
+        // 🎯 ONLY process detailed sleep stage samples
+        if (!SLEEP_STAGES.has(sample.value)) continue;
 
         const startDate = new Date(sample.startDate);
         const endDate = new Date(sample.endDate);
 
-        const durationMin = (endDate.getTime() - startDate.getTime()) / 60000;
-        if (!Number.isFinite(durationMin) || durationMin <= 0) return;
+        const minutes = (endDate.getTime() - startDate.getTime()) / 60000;
+        if (!Number.isFinite(minutes) || minutes <= 0) continue;
 
-        // Determine which day bucket (0–6)
+        // Which day bucket the sample belongs in
         const dayIndex =
           6 -
           Math.floor(
@@ -278,14 +288,12 @@ export function useHealthKit() {
           );
 
         if (dayIndex >= 0 && dayIndex < 7) {
-          dailyMinutes[dayIndex] += durationMin;
+          dailyMinutes[dayIndex] += minutes;
         }
-      });
+      }
 
       const avg =
-        dailyMinutes.length > 0
-          ? dailyMinutes.reduce((a, b) => a + b, 0) / dailyMinutes.length
-          : 0;
+        dailyMinutes.reduce((acc, v) => acc + v, 0) / dailyMinutes.length;
 
       return { daily: dailyMinutes, avg };
     } catch (err) {
