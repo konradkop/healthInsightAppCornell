@@ -44,10 +44,15 @@ export default function Chat() {
     setInput("");
 
     // "http://localhost:8000/chat"
-    // https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat
+    // health-insight-app-cornell-2025-e2gmgghedbcag3d9.eastus-01.azurewebsites.net/chat
     try {
+      console.log(
+        "Sending messages to backend:",
+        JSON.stringify(healthDataPayload)
+        );
       const response = await fetch(
-        "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/chat",
+        
+        "https://health-insight-app-cornell-2025-e2gmgghedbcag3d9.eastus-01.azurewebsites.net/chat",
         {
           method: "POST",
           headers: {
