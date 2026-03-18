@@ -32,10 +32,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
       value={{
         signIn: async (username: string, password: string) => {
           // Replace this when deploying to make sure it goes to the azure server when deploying
-          // https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/auth/login
+          // https://health-insight-app-cornell-2025-e2gmgghedbcag3d9.eastus-01.azurewebsites.net/auth/login
           // http://localhost:8000/auth/login
           const res = await fetch(
-            "https://health-insight-app-cornell-2025-v3-asgyg9h5e4a0hbf4.eastus2-01.azurewebsites.net/auth/login",
+            "https://health-insight-app-cornell-2025-e2gmgghedbcag3d9.eastus-01.azurewebsites.net/auth/login",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },

@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useGPSContext } from "../contexts/gps/GPSContext";
 import { useSharedHealthKit } from "../contexts/healthkit/HealthKitContext";
 import { DailyStats } from "../contexts/healthkit/HealthKitContextTypes";
 
@@ -24,6 +25,7 @@ export default function HealthKitDemo() {
 
   const { bodyFat, heartRate, stepCount, activeEnergy, flightsClimbed, sleep } =
     healthData;
+const { location, fetchCurrentLocation } = useGPSContext();
 
   const handleFetchAll = async () => {
     if (useSample) return;
@@ -131,6 +133,15 @@ export default function HealthKitDemo() {
               /> */}
               {renderDailyStats(sleep)}
             </View>
+
+            <>
+            <Text>
+              {location
+                ? `${location.latitude}, ${location.longitude}`
+                : "No location"}
+            </Text>
+            <Button title="Refresh" onPress={fetchCurrentLocation} />
+          </>
           </View>
         </ScrollView>
       </CenteredContainer>
