@@ -12,6 +12,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { useGPSContext } from "../contexts/gps/GPSContext";
 import { useSharedHealthKit } from "../contexts/healthkit/HealthKitContext";
 
 export default function Chat() {
@@ -26,6 +27,7 @@ export default function Chat() {
   const scrollViewRef = useRef<ScrollView>(null);
 
   const { healthData } = useSharedHealthKit();
+  const { location } = useGPSContext();
 
   const healthDataPayload = {
     bodyFat: healthData.bodyFat,
@@ -35,6 +37,15 @@ export default function Chat() {
     flightsClimbed: healthData.flightsClimbed,
     sleep: healthData.sleep,
   };
+
+  const gpsDataPayload =
+  {
+        latitude: location ? location.latitude : null,
+        longitude: location ? location.longitude :null ,
+        accuracy: location? location.accuracy: null,
+  }
+  
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -44,15 +55,12 @@ export default function Chat() {
     setInput("");
 
     // "http://localhost:8000/chat"
+    // https://health-insight-app-cornell-2025-e2gmgghedbcag3d9.eastus-01.azurewebsites.net/chat
     // health-insight-app-cornell-2025-e2gmgghedbcag3d9.eastus-01.azurewebsites.net/chat
     try {
-      console.log(
-        "Sending messages to backend:",
-        JSON.stringify(healthDataPayload)
-        );
+
       const response = await fetch(
-        
-        "https://health-insight-app-cornell-2025-e2gmgghedbcag3d9.eastus-01.azurewebsites.net/chat",
+        "http://localhost:8000/chat",
         {
           method: "POST",
           headers: {
@@ -65,8 +73,9 @@ export default function Chat() {
               content: m.content,
             })),
             health_data: healthDataPayload,
-            use_harm_guardrail: true,
-            use_mi_check_guardrail: true,
+            gps_data: gpsDataPayload,
+            use_harm_guardrail: false,
+            use_mi_check_guardrail: false,
           }),
         }
       );

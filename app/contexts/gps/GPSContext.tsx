@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useEffect } from "react";
 import { useGPS } from "../../../hooks/useGPS";
 
+
 type GPSContextType = ReturnType<typeof useGPS>;
-
 const GPSContext = createContext<GPSContextType | null>(null);
-
 // ===== Provider =====
 export const GPSProvider = ({ children }: { children: React.ReactNode }) => {
+  
   const gps = useGPS();
 
   // optional: auto-fetch on mount

@@ -2,16 +2,25 @@ import * as Location from "expo-location";
 import { useEffect, useState } from "react";
 import { Alert, Platform } from "react-native";
 
-type GPSLocation = {
+export type GPSLocation = {
   latitude: number;
   longitude: number;
   accuracy: number | null;
 };
+const sampleLocation = {
+  latitude: 40.7440,  // Hoboken/NYC area
+  longitude: -74.0324,
+  accuracy: 10,
+};
+
 
 export function useGPS() {
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
-  const [location, setLocation] = useState<GPSLocation | null>(null);
+  const [isAvailable, setIsAvailable] = useState<boolean>(Platform.OS === "ios" || Platform.OS === "android");
   const [error, setError] = useState<string | null>(null);
+  const [location, setLocation] = useState<GPSLocation | null>(
+    isAvailable ? null : sampleLocation
+  );
+
 
   // ===== Check availability =====
   useEffect(() => {
@@ -73,6 +82,8 @@ export function useGPS() {
       console.error("Error fetching location:", err);
       setError("Failed to fetch location");
       Alert.alert("Error", "Could not fetch GPS location");
+      setLocation(sampleLocation);
+      return sampleLocation;
     }
   };
 

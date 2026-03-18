@@ -17,7 +17,8 @@ import { DailyStats } from "../contexts/healthkit/HealthKitContextTypes";
 
 export default function HealthKitDemo() {
   const { isAvailable, healthData, fetchAllHealthData } = useSharedHealthKit();
-
+  const { location, fetchCurrentLocation } = useGPSContext();
+  
   const [loading, setLoading] = useState(false);
 
   const useSample =
@@ -25,15 +26,21 @@ export default function HealthKitDemo() {
 
   const { bodyFat, heartRate, stepCount, activeEnergy, flightsClimbed, sleep } =
     healthData;
-const { location, fetchCurrentLocation } = useGPSContext();
 
   const handleFetchAll = async () => {
     if (useSample) return;
     setLoading(true);
     try {
-      await fetchAllHealthData();
+
+
+    const promises: Promise<any>[] = [];
+    promises.push(fetchAllHealthData());
+    promises.push(fetchCurrentLocation());
+
+    await Promise.all(promises);
+
     } catch (err) {
-      console.error("Error fetching HealthKit data:", err);
+      console.error("Error fetching GPS or Health data:", err);
     } finally {
       setLoading(false);
     }
@@ -133,15 +140,12 @@ const { location, fetchCurrentLocation } = useGPSContext();
               /> */}
               {renderDailyStats(sleep)}
             </View>
-
-            <>
-            <Text>
-              {location
+            <View style={styles.section}>
+              <Text style={styles.label}>Location</Text>
+               {location
                 ? `${location.latitude}, ${location.longitude}`
                 : "No location"}
-            </Text>
-            <Button title="Refresh" onPress={fetchCurrentLocation} />
-          </>
+            </View>
           </View>
         </ScrollView>
       </CenteredContainer>
