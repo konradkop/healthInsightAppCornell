@@ -2,6 +2,7 @@ import { CenteredContainer } from "@/components/centered-component";
 import { TitleText } from "@/components/title-text";
 import { Colors } from "@/constants/theme";
 // import { DailyGiftedChart } from "@/components/daily-chart";
+import { usePostLocation } from "@/hooks/postLocation";
 import React, { useState } from "react";
 import {
   Button,
@@ -18,7 +19,8 @@ import { DailyStats } from "../contexts/healthkit/HealthKitContextTypes";
 export default function HealthKitDemo() {
   const { isAvailable, healthData, fetchAllHealthData } = useSharedHealthKit();
   const { location, fetchCurrentLocation } = useGPSContext();
-  
+  const {postLocation } = usePostLocation()
+
   const [loading, setLoading] = useState(false);
 
   const useSample =
@@ -45,6 +47,20 @@ export default function HealthKitDemo() {
       setLoading(false);
     }
   };
+
+  const handleSendLocation = () => {
+    setLoading(true);
+    try {
+      if (location) {
+        postLocation(1 ,location)
+      }
+      } catch (err) {
+        console.error("Error posting location data:", err);
+      } finally {
+        setLoading(false);
+      }
+
+  }
 
   const renderDailyStats = (stats: DailyStats, unit?: string) => (
     <View>
@@ -146,6 +162,11 @@ export default function HealthKitDemo() {
                 ? `${location.latitude}, ${location.longitude}`
                 : "No location"}
             </View>
+            <Button
+              title={loading ? "Sending..." : "Send current Location"}
+              onPress={handleSendLocation}
+              disabled={loading}
+            />
           </View>
         </ScrollView>
       </CenteredContainer>

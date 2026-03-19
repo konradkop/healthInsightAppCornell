@@ -4,7 +4,7 @@ import { ChatText } from "@/components/chat-text";
 import { TitleText } from "@/components/title-text";
 import { Colors } from "@/constants/theme";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useGPSContext } from "../contexts/gps/GPSContext";
 import { useSharedHealthKit } from "../contexts/healthkit/HealthKitContext";
+import { baseURL } from "../urls";
 
 export default function Chat() {
   const [messages, setMessages] = useState([
@@ -46,6 +47,33 @@ export default function Chat() {
   }
   
 
+  const fetchChatHistory = async () => {
+  try {
+    const response = await fetch(`${baseURL}/chat/history/1`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer dummy-token-12345", // dummy token
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data?.messages) {
+      setMessages(data.messages.map((msg: any, idx: number) => ({
+        id: idx + 1, // simple ID if your DB doesn't return one
+        role: msg.role === "assistant" ? "assistant" : "user",
+        content: msg.content,
+      })));
+    }
+  } catch (error) {
+    console.error("Error fetching chat history:", error);
+  }
+};
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -53,14 +81,11 @@ export default function Chat() {
     const newMessage = { id: Date.now(), role: "user", content: userMessage };
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
-
-    // "http://localhost:8000/chat"
-    // https://health-insight-app-cornell-2025-e2gmgghedbcag3d9.eastus-01.azurewebsites.net/chat
-    // health-insight-app-cornell-2025-e2gmgghedbcag3d9.eastus-01.azurewebsites.net/chat
+    
     try {
 
       const response = await fetch(
-        "http://localhost:8000/chat",
+        `${baseURL}/chat`,
         {
           method: "POST",
           headers: {
@@ -107,6 +132,10 @@ export default function Chat() {
       ]);
     }
   };
+
+  useEffect(() => {
+  fetchChatHistory();
+}, []);
 
   return (
     <View style={[styles.container]}>

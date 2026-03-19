@@ -9,7 +9,6 @@ export const GPSProvider = ({ children }: { children: React.ReactNode }) => {
   
   const gps = useGPS();
 
-  // optional: auto-fetch on mount
   useEffect(() => {
     if (gps.isAvailable) {
       gps.fetchCurrentLocation();
