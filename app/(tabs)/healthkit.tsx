@@ -65,11 +65,13 @@ export default function HealthKitDemo() {
   const renderDailyStats = (stats: DailyStats, unit?: string) => (
     <View>
       <Text style={styles.label}>Daily Values:</Text>
+
       {stats.daily.map((val, idx) => (
         <Text key={idx} style={styles.data}>
-          Day {idx + 1}: {val.toFixed(0)} {unit ?? ""}
+          Day {idx + 1}: {val.value.toFixed(0)} {unit ?? ""}
         </Text>
       ))}
+
       <Text style={[styles.data, styles.avg]}>
         Average: {stats.avg?.toFixed(0)} {unit ?? ""}
       </Text>

@@ -1,7 +1,13 @@
 // HealthKitContextTypes.ts
 
+
+export type DailyValue = {
+  value: number;
+  date: string;
+};
+
 export type DailyStats = {
-  daily: number[];
+  daily: DailyValue[];
   avg: number | null;
 };
 
@@ -47,13 +53,45 @@ export const defaultContext: HealthKitContextType = {
 
 // Example sample data
 export const sampleData: HealthData = {
-  bodyFat: 22.5,
-  heartRate: { daily: [70, 72, 68, 75, 69, 71, 70], avg: 70.7 },
-  stepCount: {
-    daily: [5000, 6500, 7000, 4000, 8000, 7500, 6000],
-    avg: 6142.86,
+  bodyFat: 18.5,
+
+  heartRate: {
+    daily: Array.from({ length: 7 }).map((_, i) => ({
+      value: 62 + i,
+      date: new Date(Date.now() - (6 - i) * 86400000).toISOString().split("T")[0],
+    })),
+    avg: 65,
   },
-  activeEnergy: { daily: [250, 300, 280, 200, 320, 310, 290], avg: 278.57 },
-  flightsClimbed: { daily: [10, 12, 8, 15, 9, 11, 10], avg: 10.71 },
-  sleep: { daily: [9, 8, 8, 9, 9, 8, 9], avg: 8.5 },
+
+  stepCount: {
+    daily: Array.from({ length: 7 }).map((_, i) => ({
+      value: 6000 + i * 500,
+      date: new Date(Date.now() - (6 - i) * 86400000).toISOString().split("T")[0],
+    })),
+    avg: 6500,
+  },
+
+  activeEnergy: {
+    daily: Array.from({ length: 7 }).map((_, i) => ({
+      value: 400 + i * 20,
+      date: new Date(Date.now() - (6 - i) * 86400000).toISOString().split("T")[0],
+    })),
+    avg: 450,
+  },
+
+  flightsClimbed: {
+    daily: Array.from({ length: 7 }).map((_, i) => ({
+      value: 8 + i,
+      date: new Date(Date.now() - (6 - i) * 86400000).toISOString().split("T")[0],
+    })),
+    avg: 10,
+  },
+
+  sleep: {
+    daily: Array.from({ length: 7 }).map((_, i) => ({
+      value: 6 + Math.random(),
+      date: new Date(Date.now() - (6 - i) * 86400000).toISOString().split("T")[0],
+    })),
+    avg: 6.8,
+  },
 };

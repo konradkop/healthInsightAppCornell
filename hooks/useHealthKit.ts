@@ -1,4 +1,5 @@
-  import {
+  import { DailyStats } from "@/app/contexts/healthkit/HealthKitContextTypes";
+import {
   CategoryTypeIdentifier,
   CategoryValueSleepAnalysis,
   getMostRecentQuantitySample,
@@ -11,11 +12,6 @@
 } from "@kingstinct/react-native-healthkit";
 import { useEffect, useState } from "react";
 import { Alert, Platform } from "react-native";
-
-  type DailyStats = {
-    daily: number[];
-    avg: number | null;
-  };
 
   const UNITS: Partial<Record<QuantityTypeIdentifier, string>> = {
     HKQuantityTypeIdentifierStepCount: "count",
@@ -209,17 +205,26 @@ import { Alert, Platform } from "react-native";
         const safeResults = Array.isArray(results) ? results : [];
 
         const daily = safeResults.map((item) => {
-          if (!item || typeof item !== "object") return 0;
+          if (!item || typeof item !== "object") {
+            return { value: 0, date: new Date().toISOString() };
+          }
 
           const avgQ = item.averageQuantity;
-          if (!avgQ || typeof avgQ.quantity !== "number") return 0;
+          const value =
+            avgQ && typeof avgQ.quantity === "number" && avgQ.quantity >= 0
+              ? avgQ.quantity
+              : 0;
 
-          const value = avgQ.quantity;
-          return Number.isFinite(value) && value >= 0 ? value : 0;
+          return {
+            value,
+            date: new Date(item.startDate).toISOString(),
+          };
         });
 
         const avg =
-          daily.length > 0 ? daily.reduce((a, b) => a + b, 0) / daily.length : 0;
+          daily.length > 0
+            ? daily.reduce((a, b) => a + b.value, 0) / daily.length
+            : 0;
 
         return { daily, avg };
       } catch (err) {
@@ -238,14 +243,14 @@ import { Alert, Platform } from "react-native";
     // separate funciton for  the CATEGORY fetchLast7Days
     const fetchLast7DaysCategory = async (
       identifier: CategoryTypeIdentifier
-    ): Promise<{ daily: number[]; avg: number }> => {
+    ): Promise<DailyStats> => {
       const today = new Date();
       const anchor = new Date(today);
-      anchor.setHours(0, 0, 0, 0); // today at midnight
+      anchor.setHours(0, 0, 0, 0);
 
       try {
         const start = new Date(anchor);
-        start.setDate(start.getDate() - 6); // 7-day window (inclusive)
+        start.setDate(start.getDate() - 6);
 
         const samples = await queryCategorySamples(identifier, {
           filter: { startDate: start, endDate: today },
@@ -264,52 +269,67 @@ import { Alert, Platform } from "react-native";
 
         const dailyMinutes = Array(7).fill(0);
 
+        const MS_PER_DAY = 86400000;
+
         for (const s of samples) {
           if (!s?.startDate || !s?.endDate) continue;
           if (!SLEEP_STAGES.has(s.value)) continue;
 
-          let startDate = new Date(s.startDate);
-          let endDate = new Date(s.endDate);
+          const startDate = new Date(s.startDate);
+          const endDate = new Date(s.endDate);
 
           if (endDate <= startDate) continue;
 
-          // Clamp to window
-          if (endDate < start || startDate > today) continue;
-          if (startDate < start) startDate = start;
-          if (endDate > today) endDate = today;
+          // clamp interval
+          const clampedStart = startDate < start ? start : startDate;
+          const clampedEnd = endDate > today ? today : endDate;
 
-          // Split interval across days
-          let cur = new Date(startDate);
+          if (clampedEnd <= clampedStart) continue;
 
-          while (cur < endDate) {
-            const dayStart = new Date(cur);
+          // split across days
+          let cursor = new Date(clampedStart);
+
+          while (cursor < clampedEnd) {
+            const dayStart = new Date(cursor);
             dayStart.setHours(0, 0, 0, 0);
 
             const nextDay = new Date(dayStart);
             nextDay.setDate(nextDay.getDate() + 1);
 
-            const segmentEnd = nextDay < endDate ? nextDay : endDate;
-            const minutes = (segmentEnd.getTime() - cur.getTime()) / 60000;
+            const segmentEnd = clampedEnd < nextDay ? clampedEnd : nextDay;
+
+            const minutes = (segmentEnd.getTime() - cursor.getTime()) / 60000;
 
             if (minutes > 0) {
-              const daysAgo = Math.floor(
-                (anchor.getTime() - dayStart.getTime()) / 86400000
+              const dayIndex = Math.floor(
+                (dayStart.getTime() - anchor.getTime()) / MS_PER_DAY
               );
-              const index = 6 - daysAgo;
+
+              const index = 6 + dayIndex; // maps [-6..0] → [0..6]
 
               if (index >= 0 && index < 7) {
                 dailyMinutes[index] += minutes;
               }
             }
 
-            cur = segmentEnd;
+            cursor = segmentEnd;
           }
         }
 
-        const dailyHours = dailyMinutes.map((m) => m / 60);
-        const avg = dailyHours.reduce((a, b) => a + b, 0) / dailyHours.length;
+        const daily = dailyMinutes.map((m, i) => {
+          const date = new Date(anchor);
+          date.setDate(date.getDate() - (6 - i));
 
-        return { daily: dailyHours, avg };
+          return {
+            value: m / 60,
+            date: date.toISOString(),
+          };
+        });
+
+        const avg =
+          daily.reduce((sum, d) => sum + d.value, 0) / daily.length;
+
+        return { daily, avg };
       } catch (err) {
         console.error("fetchLast7DaysCategory error:", err);
         return { daily: Array(7).fill(0), avg: 0 };
