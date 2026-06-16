@@ -419,32 +419,17 @@ const SAMPLE_STEP_COUNT: DailyStats = {
       setHeartRate(SAMPLE_HEART_RATE);
     };
 
-    // const fetchStepCount = async () => {
-    //   // if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
-    //   // const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
-    //   // setStepCount(value);
-    //   setStepCount(SAMPLE_STEP_COUNT);
-    // };
-
 const fetchStepCount = async () => {
   try {
-    Alert.alert("DEBUG", "Starting fetchStepCount");
 
     const hasPermission = await requestPermission(
       "HKQuantityTypeIdentifierStepCount"
-    );
-
-    Alert.alert(
-      "DEBUG",
-      `Permission result: ${JSON.stringify(hasPermission)}`
     );
 
     if (!hasPermission) {
       Alert.alert("DEBUG", "Permission denied");
       return;
     }
-
-    Alert.alert("DEBUG", "Calling fetchLast7Days");
 
     const value = await fetchLast7Days(
       "HKQuantityTypeIdentifierStepCount"
@@ -457,7 +442,6 @@ const fetchStepCount = async () => {
 
     setStepCount(value);
 
-    Alert.alert("DEBUG", "setStepCount completed");
   } catch (err) {
     Alert.alert(
       "fetchStepCount Error",
@@ -468,27 +452,63 @@ const fetchStepCount = async () => {
 
 
 
-    const fetchActiveEnergy = async () => {
-      // HealthKit temporarily disabled for active energy. Returning sample values.
-      // if (
-      //   !(await requestPermission("HKQuantityTypeIdentifierActiveEnergyBurned"))
-      // )
-      //   return;
-      // const value = await fetchLast7Days(
-      //   "HKQuantityTypeIdentifierActiveEnergyBurned"
-      // );
-      setActiveEnergy(SAMPLE_ACTIVE_ENERGY);
-    };
+  const fetchActiveEnergy = async () => {
+    try {
+      const hasPermission = await requestPermission(
+        "HKQuantityTypeIdentifierActiveEnergyBurned"
+      );
 
-    const fetchFlightsClimbed = async () => {
-      // HealthKit temporarily disabled for flights climbed. Returning sample values.
-      // if (!(await requestPermission("HKQuantityTypeIdentifierFlightsClimbed")))
-      //   return;
-      // const value = await fetchLast7Days(
-      //   "HKQuantityTypeIdentifierFlightsClimbed"
-      // );
-      setFlightsClimbed(SAMPLE_FLIGHTS_CLIMBED);
-    };
+      if (!hasPermission) {
+        Alert.alert("DEBUG", "Permission denied");
+        return;
+      }
+
+      const value = await fetchLast7Days(
+        "HKQuantityTypeIdentifierActiveEnergyBurned"
+      );
+
+      Alert.alert(
+        "fetchActiveEnergy Result",
+        JSON.stringify(value).slice(0, 500)
+      );
+
+      setActiveEnergy(value);
+    } catch (err) {
+      Alert.alert(
+        "fetchActiveEnergy Error",
+        err instanceof Error ? err.message : JSON.stringify(err)
+      );
+    }
+  };
+
+  const fetchFlightsClimbed = async () => {
+    try {
+      const hasPermission = await requestPermission(
+        "HKQuantityTypeIdentifierFlightsClimbed"
+      );
+
+      if (!hasPermission) {
+        Alert.alert("DEBUG", "Permission denied");
+        return;
+      }
+
+      const value = await fetchLast7Days(
+        "HKQuantityTypeIdentifierFlightsClimbed"
+      );
+
+      Alert.alert(
+        "fetchFlightsClimbed Result",
+        JSON.stringify(value).slice(0, 500)
+      );
+
+      setFlightsClimbed(value);
+    } catch (err) {
+      Alert.alert(
+        "fetchFlightsClimbed Error",
+        err instanceof Error ? err.message : JSON.stringify(err)
+      );
+    }
+  };
 
     const fetchSleep = async () => {
       // HealthKit temporarily disabled for sleep data. Returning sample values.
