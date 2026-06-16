@@ -189,20 +189,36 @@ const SAMPLE_STEP_COUNT: DailyStats = {
           ? results
           : [];
 
-        const daily: number[] = safeResults.map((item) => {
-          if (!item || typeof item !== "object") return 0;
+        const daily = safeResults.map((item, index) => {
+          if (!item || typeof item !== "object") {
+            return {
+              value: 0,
+              date: new Date(anchor.getTime() - (6 - index) * 86400000).toISOString(),
+            };
+          }
 
           const sum = item?.sumQuantity;
 
-          if (!sum || typeof sum?.quantity !== "number") return 0;
+          if (!sum || typeof sum?.quantity !== "number") {
+            return {
+              value: 0,
+              date: new Date(anchor.getTime() - (6 - index) * 86400000).toISOString(),
+            };
+          }
 
           const value = sum?.quantity || 0;
+          const finalValue = Number.isFinite(value) && value >= 0 ? value : 0;
 
-          return Number.isFinite(value) && value >= 0 ? value : 0;
+          return {
+            value: finalValue,
+            date: new Date(anchor.getTime() - (6 - index) * 86400000).toISOString(),
+          };
         });
 
         const avg =
-          daily.length > 0 ? daily.reduce((a, b) => a + b, 0) / daily.length : 0;
+          daily.length > 0
+            ? daily.reduce((a, b) => a + b.value, 0) / daily.length
+            : 0;
 
         return { daily, avg };
       } catch (err) {
@@ -403,12 +419,54 @@ const SAMPLE_STEP_COUNT: DailyStats = {
       setHeartRate(SAMPLE_HEART_RATE);
     };
 
-    const fetchStepCount = async () => {
-      // if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
-      // const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
-      // setStepCount(value);
-      setStepCount(SAMPLE_STEP_COUNT);
-    };
+    // const fetchStepCount = async () => {
+    //   // if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
+    //   // const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
+    //   // setStepCount(value);
+    //   setStepCount(SAMPLE_STEP_COUNT);
+    // };
+
+const fetchStepCount = async () => {
+  try {
+    Alert.alert("DEBUG", "Starting fetchStepCount");
+
+    const hasPermission = await requestPermission(
+      "HKQuantityTypeIdentifierStepCount"
+    );
+
+    Alert.alert(
+      "DEBUG",
+      `Permission result: ${JSON.stringify(hasPermission)}`
+    );
+
+    if (!hasPermission) {
+      Alert.alert("DEBUG", "Permission denied");
+      return;
+    }
+
+    Alert.alert("DEBUG", "Calling fetchLast7Days");
+
+    const value = await fetchLast7Days(
+      "HKQuantityTypeIdentifierStepCount"
+    );
+
+    Alert.alert(
+      "fetchLast7Days Result",
+      JSON.stringify(value).slice(0, 500)
+    );
+
+    setStepCount(value);
+
+    Alert.alert("DEBUG", "setStepCount completed");
+  } catch (err) {
+    Alert.alert(
+      "fetchStepCount Error",
+      err instanceof Error ? err.message : JSON.stringify(err)
+    );
+  }
+};
+
+
 
     const fetchActiveEnergy = async () => {
       // HealthKit temporarily disabled for active energy. Returning sample values.
