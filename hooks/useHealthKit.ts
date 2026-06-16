@@ -3,15 +3,56 @@ import {
   CategoryTypeIdentifier,
   CategoryValueSleepAnalysis,
   getMostRecentQuantitySample,
-  isHealthDataAvailable,
   QuantityTypeIdentifier,
   queryCategorySamples,
   queryStatisticsCollectionForQuantity,
   QueryStatisticsResponse,
-  requestAuthorization,
+  requestAuthorization
 } from "@kingstinct/react-native-healthkit";
 import { useEffect, useState } from "react";
 import { Alert, Platform } from "react-native";
+
+const SAMPLE_BODY_FAT = 18.5;
+
+const SAMPLE_HEART_RATE: DailyStats = {
+  daily: Array.from({ length: 7 }).map((_, index) => ({
+    value: 58 + index * 2,
+    date: new Date(Date.now() - (6 - index) * 86400000).toISOString(),
+  })),
+  avg: 64,
+};
+
+const SAMPLE_ACTIVE_ENERGY: DailyStats = {
+  daily: Array.from({ length: 7 }).map((_, index) => ({
+    value: 380 + index * 25,
+    date: new Date(Date.now() - (6 - index) * 86400000).toISOString(),
+  })),
+  avg: 440,
+};
+
+const SAMPLE_FLIGHTS_CLIMBED: DailyStats = {
+  daily: Array.from({ length: 7 }).map((_, index) => ({
+    value: 5 + index,
+    date: new Date(Date.now() - (6 - index) * 86400000).toISOString(),
+  })),
+  avg: 8,
+};
+
+const SAMPLE_SLEEP: DailyStats = {
+  daily: Array.from({ length: 7 }).map((_, index) => ({
+    value: 6 + index * 0.15,
+    date: new Date(Date.now() - (6 - index) * 86400000).toISOString(),
+  })),
+  avg: 6.9,
+};
+
+const SAMPLE_STEP_COUNT: DailyStats = {
+  daily: Array.from({ length: 7 }).map((_, index) => ({
+    value: 7500 + index * 800,
+    date: new Date(Date.now() - (6 - index) * 86400000).toISOString(),
+  })),
+  avg: 9000,
+};
 
   const UNITS: Partial<Record<QuantityTypeIdentifier, string>> = {
     HKQuantityTypeIdentifierStepCount: "count",
@@ -51,12 +92,13 @@ import { Alert, Platform } from "react-native";
         return;
       }
 
-      const checkAvailability = async () => {
-        const available = await isHealthDataAvailable();
-        setIsAvailable(available);
-      };
-
-      checkAvailability();
+      // Temporarily bypass HealthKit availability checks and use sample data on iOS.
+      setIsAvailable(true);
+      // const checkAvailability = async () => {
+      //   const available = await isHealthDataAvailable();
+      //   setIsAvailable(available);
+      // };
+      // checkAvailability();
     }, []);
 
     // ===== Request permissions =====
@@ -342,60 +384,66 @@ import { Alert, Platform } from "react-native";
 
     // ===== Metric-specific fetchers =====
     const fetchBodyFat = async () => {
-      if (!(await requestPermission("HKQuantityTypeIdentifierBodyFatPercentage")))
-        return;
-      const value = await fetchMostRecent(
-        "HKQuantityTypeIdentifierBodyFatPercentage"
-      );
-      setBodyFat(value);
+      // HealthKit temporarily disabled for body fat. Returning sample value.
+      // if (!(await requestPermission("HKQuantityTypeIdentifierBodyFatPercentage")))
+      //   return;
+      // const value = await fetchMostRecent(
+      //   "HKQuantityTypeIdentifierBodyFatPercentage"
+      // );
+      setBodyFat(SAMPLE_BODY_FAT);
     };
 
     const fetchHeartRate = async () => {
-      if (!(await requestPermission("HKQuantityTypeIdentifierRestingHeartRate")))
-        return;
-      const value = await fetchLast7DaysAverage(
-        "HKQuantityTypeIdentifierRestingHeartRate"
-      );
-      setHeartRate(value);
+      // HealthKit temporarily disabled for heart rate. Returning sample values.
+      // if (!(await requestPermission("HKQuantityTypeIdentifierRestingHeartRate")))
+      //   return;
+      // const value = await fetchLast7DaysAverage(
+      //   "HKQuantityTypeIdentifierRestingHeartRate"
+      // );
+      setHeartRate(SAMPLE_HEART_RATE);
     };
 
     const fetchStepCount = async () => {
-      if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
-      const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
-      setStepCount(value);
+      // if (!(await requestPermission("HKQuantityTypeIdentifierStepCount"))) return;
+      // const value = await fetchLast7Days("HKQuantityTypeIdentifierStepCount");
+      // setStepCount(value);
+      setStepCount(SAMPLE_STEP_COUNT);
     };
 
     const fetchActiveEnergy = async () => {
-      if (
-        !(await requestPermission("HKQuantityTypeIdentifierActiveEnergyBurned"))
-      )
-        return;
-      const value = await fetchLast7Days(
-        "HKQuantityTypeIdentifierActiveEnergyBurned"
-      );
-      setActiveEnergy(value);
+      // HealthKit temporarily disabled for active energy. Returning sample values.
+      // if (
+      //   !(await requestPermission("HKQuantityTypeIdentifierActiveEnergyBurned"))
+      // )
+      //   return;
+      // const value = await fetchLast7Days(
+      //   "HKQuantityTypeIdentifierActiveEnergyBurned"
+      // );
+      setActiveEnergy(SAMPLE_ACTIVE_ENERGY);
     };
 
     const fetchFlightsClimbed = async () => {
-      if (!(await requestPermission("HKQuantityTypeIdentifierFlightsClimbed")))
-        return;
-      const value = await fetchLast7Days(
-        "HKQuantityTypeIdentifierFlightsClimbed"
-      );
-      setFlightsClimbed(value);
+      // HealthKit temporarily disabled for flights climbed. Returning sample values.
+      // if (!(await requestPermission("HKQuantityTypeIdentifierFlightsClimbed")))
+      //   return;
+      // const value = await fetchLast7Days(
+      //   "HKQuantityTypeIdentifierFlightsClimbed"
+      // );
+      setFlightsClimbed(SAMPLE_FLIGHTS_CLIMBED);
     };
 
     const fetchSleep = async () => {
-      if (
-        !(await requestCategoryPermission(
-          "HKCategoryTypeIdentifierSleepAnalysis"
-        ))
-      )
-        return;
-      const value = await fetchLast7DaysCategory(
-        "HKCategoryTypeIdentifierSleepAnalysis"
-      );
-      setSleep(value);
+      // HealthKit temporarily disabled for sleep data. Returning sample values.
+      // if (
+      //   !(await requestCategoryPermission(
+      //     "HKCategoryTypeIdentifierSleepAnalysis"
+      //   ))
+      // )
+      //   return;
+      // const value = await fetchLast7DaysCategory(
+      //   "HKCategoryTypeIdentifierSleepAnalysis"
+      // );
+      setSleep(SAMPLE_SLEEP);
     };
 
     // ===== Expose API =====
