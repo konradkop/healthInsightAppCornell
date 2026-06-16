@@ -419,7 +419,7 @@ const fetchHeartRate = async () => {
     );
 
     // leave commented out initially
-     setHeartRate(value);
+    //  setHeartRate(value);
 
   } catch (err) {
     Alert.alert(
