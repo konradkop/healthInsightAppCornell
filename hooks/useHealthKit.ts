@@ -12,8 +12,6 @@ import {
 import { useEffect, useState } from "react";
 import { Alert, Platform } from "react-native";
 
-const SAMPLE_BODY_FAT = 18.5;
-
 const SAMPLE_HEART_RATE: DailyStats = {
   daily: Array.from({ length: 7 }).map((_, index) => ({
     value: 58 + index * 2,
@@ -21,37 +19,12 @@ const SAMPLE_HEART_RATE: DailyStats = {
   })),
   avg: 64,
 };
-
-const SAMPLE_ACTIVE_ENERGY: DailyStats = {
-  daily: Array.from({ length: 7 }).map((_, index) => ({
-    value: 380 + index * 25,
-    date: new Date(Date.now() - (6 - index) * 86400000).toISOString(),
-  })),
-  avg: 440,
-};
-
-const SAMPLE_FLIGHTS_CLIMBED: DailyStats = {
-  daily: Array.from({ length: 7 }).map((_, index) => ({
-    value: 5 + index,
-    date: new Date(Date.now() - (6 - index) * 86400000).toISOString(),
-  })),
-  avg: 8,
-};
-
 const SAMPLE_SLEEP: DailyStats = {
   daily: Array.from({ length: 7 }).map((_, index) => ({
     value: 6 + index * 0.15,
     date: new Date(Date.now() - (6 - index) * 86400000).toISOString(),
   })),
   avg: 6.9,
-};
-
-const SAMPLE_STEP_COUNT: DailyStats = {
-  daily: Array.from({ length: 7 }).map((_, index) => ({
-    value: 7500 + index * 800,
-    date: new Date(Date.now() - (6 - index) * 86400000).toISOString(),
-  })),
-  avg: 9000,
 };
 
   const UNITS: Partial<Record<QuantityTypeIdentifier, string>> = {
@@ -414,11 +387,6 @@ const SAMPLE_STEP_COUNT: DailyStats = {
           "HKQuantityTypeIdentifierBodyFatPercentage"
         );
 
-        Alert.alert(
-          "fetchBodyFat Result",
-          JSON.stringify(value)
-        );
-
         setBodyFat(value);
       } catch (err) {
         Alert.alert(
@@ -428,15 +396,38 @@ const SAMPLE_STEP_COUNT: DailyStats = {
       }
     };
 
-    const fetchHeartRate = async () => {
-      // HealthKit temporarily disabled for heart rate. Returning sample values.
-      // if (!(await requestPermission("HKQuantityTypeIdentifierRestingHeartRate")))
-      //   return;
-      // const value = await fetchLast7DaysAverage(
-      //   "HKQuantityTypeIdentifierRestingHeartRate"
-      // );
-      setHeartRate(SAMPLE_HEART_RATE);
-    };
+const fetchHeartRate = async () => {
+  try {
+    const hasPermission = await requestPermission(
+      "HKQuantityTypeIdentifierRestingHeartRate"
+    );
+
+    if (!hasPermission) {
+      Alert.alert("DEBUG", "Permission denied");
+      return;
+    }
+
+    Alert.alert("DEBUG", "Before fetchLast7DaysAverage");
+
+    const value = await fetchLast7DaysAverage(
+      "HKQuantityTypeIdentifierRestingHeartRate"
+    );
+
+    Alert.alert(
+      "fetchHeartRate Result",
+      JSON.stringify(value).slice(0, 500)
+    );
+
+    // leave commented out initially
+    // setHeartRate(value);
+
+  } catch (err) {
+    Alert.alert(
+      "fetchHeartRate Error",
+      err instanceof Error ? err.message : JSON.stringify(err)
+    );
+  }
+};
 
 const fetchStepCount = async () => {
   try {
@@ -454,10 +445,6 @@ const fetchStepCount = async () => {
       "HKQuantityTypeIdentifierStepCount"
     );
 
-    Alert.alert(
-      "fetchLast7Days Result",
-      JSON.stringify(value).slice(0, 500)
-    );
 
     setStepCount(value);
 
@@ -486,11 +473,6 @@ const fetchStepCount = async () => {
         "HKQuantityTypeIdentifierActiveEnergyBurned"
       );
 
-      Alert.alert(
-        "fetchActiveEnergy Result",
-        JSON.stringify(value).slice(0, 500)
-      );
-
       setActiveEnergy(value);
     } catch (err) {
       Alert.alert(
@@ -513,11 +495,6 @@ const fetchStepCount = async () => {
 
       const value = await fetchLast7Days(
         "HKQuantityTypeIdentifierFlightsClimbed"
-      );
-
-      Alert.alert(
-        "fetchFlightsClimbed Result",
-        JSON.stringify(value).slice(0, 500)
       );
 
       setFlightsClimbed(value);
