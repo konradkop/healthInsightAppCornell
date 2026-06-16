@@ -134,8 +134,9 @@ import { Alert, Platform } from "react-native";
           {
             unit: UNITS[identifier],
             filter: {
-              startDate: start,
-              endDate: today,
+              date: {              startDate: start,
+              endDate: today,}
+
             },
           }
         );
@@ -196,8 +197,10 @@ import { Alert, Platform } from "react-native";
           { day: 1 },
           {
             filter: {
-              startDate: start,
-              endDate: today,
+              date: {
+                startDate: start,
+                endDate: today,
+              },
             },
           }
         );
@@ -251,11 +254,12 @@ import { Alert, Platform } from "react-native";
       try {
         const start = new Date(anchor);
         start.setDate(start.getDate() - 6);
-
-        const samples = await queryCategorySamples(identifier, {
-          filter: { startDate: start, endDate: today },
-          ascending: true,
-        });
+        
+      const samples = await queryCategorySamples(identifier, {
+        limit: 100,
+        filter: { date: { startDate: start, endDate: today } },
+        ascending: true,
+      });
 
         if (!Array.isArray(samples)) {
           return { daily: Array(7).fill(0), avg: 0 };
