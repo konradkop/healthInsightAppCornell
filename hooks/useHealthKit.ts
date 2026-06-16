@@ -400,13 +400,32 @@ const SAMPLE_STEP_COUNT: DailyStats = {
 
     // ===== Metric-specific fetchers =====
     const fetchBodyFat = async () => {
-      // HealthKit temporarily disabled for body fat. Returning sample value.
-      // if (!(await requestPermission("HKQuantityTypeIdentifierBodyFatPercentage")))
-      //   return;
-      // const value = await fetchMostRecent(
-      //   "HKQuantityTypeIdentifierBodyFatPercentage"
-      // );
-      setBodyFat(SAMPLE_BODY_FAT);
+      try {
+        const hasPermission = await requestPermission(
+          "HKQuantityTypeIdentifierBodyFatPercentage"
+        );
+
+        if (!hasPermission) {
+          Alert.alert("DEBUG", "Permission denied");
+          return;
+        }
+
+        const value = await fetchMostRecent(
+          "HKQuantityTypeIdentifierBodyFatPercentage"
+        );
+
+        Alert.alert(
+          "fetchBodyFat Result",
+          JSON.stringify(value)
+        );
+
+        setBodyFat(value);
+      } catch (err) {
+        Alert.alert(
+          "fetchBodyFat Error",
+          err instanceof Error ? err.message : JSON.stringify(err)
+        );
+      }
     };
 
     const fetchHeartRate = async () => {
