@@ -435,17 +435,7 @@ const fetchHeartRate = async () => {
       JSON.stringify(value).slice(0, 500)
     );
 
-    // leave commented out initially
-    //  setHeartRate(value);
-    setHeartRate({
-      daily: [
-        {
-          value: 60,
-          date: new Date().toISOString(),
-        },
-      ],
-      avg: 60,
-    });
+    setHeartRate(value);
     
 
   } catch (err) {
