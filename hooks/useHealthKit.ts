@@ -29,7 +29,7 @@ const SAMPLE_SLEEP: DailyStats = {
 
   const UNITS: Partial<Record<QuantityTypeIdentifier, string>> = {
     HKQuantityTypeIdentifierStepCount: "count",
-    HKQuantityTypeIdentifierHeartRate: "count/min",
+    HKQuantityTypeIdentifierRestingHeartRate: "count/min",
     HKQuantityTypeIdentifierActiveEnergyBurned: "kcal",
     HKQuantityTypeIdentifierFlightsClimbed: "count",
     HKQuantityTypeIdentifierBodyFatPercentage: "%",
@@ -214,7 +214,16 @@ const SAMPLE_SLEEP: DailyStats = {
 
       const valid = await fetchMostRecent(identifier);
       if (valid === null) {
-        return { daily: Array(7).fill(0), avg: 0 };
+
+      return {
+      daily: [
+            {
+              value: 20,
+              date: new Date().toISOString(),
+            },
+          ],
+          avg: 20,
+        }
       }
 
       try {
@@ -270,7 +279,15 @@ const SAMPLE_SLEEP: DailyStats = {
           `Error fetching average daily stats for ${identifier}`,
           JSON.stringify(err)
         );
-        return { daily: Array(7).fill(0), avg: 0 };
+        return {
+        daily: [
+          {
+            value: 10,
+            date: new Date().toISOString(),
+          },
+        ],
+        avg: 10,
+      };
       }
     };
 
@@ -421,14 +438,14 @@ const fetchHeartRate = async () => {
     // leave commented out initially
     //  setHeartRate(value);
     setHeartRate({
-  daily: [
-    {
-      value: 60,
-      date: new Date().toISOString(),
-    },
-  ],
-  avg: 60,
-});
+      daily: [
+        {
+          value: 60,
+          date: new Date().toISOString(),
+        },
+      ],
+      avg: 60,
+    });
 
   } catch (err) {
     Alert.alert(
