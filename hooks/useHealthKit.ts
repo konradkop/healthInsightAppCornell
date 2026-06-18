@@ -420,6 +420,15 @@ const fetchHeartRate = async () => {
 
     // leave commented out initially
     //  setHeartRate(value);
+    setHeartRate({
+  daily: [
+    {
+      value: 60,
+      date: new Date().toISOString(),
+    },
+  ],
+  avg: 60,
+});
 
   } catch (err) {
     Alert.alert(
