@@ -446,6 +446,7 @@ const fetchHeartRate = async () => {
       ],
       avg: 60,
     });
+    
 
   } catch (err) {
     Alert.alert(

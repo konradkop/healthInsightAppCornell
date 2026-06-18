@@ -34,11 +34,11 @@ export const HealthKitProvider = ({ children }: { children: ReactNode }) => {
     ? sampleData
     : {
         bodyFat: bodyFat ?? 0,
-        heartRate: heartRate ?? 0,
-        stepCount: stepCount ?? 0,
-        activeEnergy: activeEnergy ?? 0,
-        flightsClimbed: flightsClimbed ?? 0,
-        sleep: sleep ?? 0,
+        heartRate: heartRate ?? { daily: [], avg: null },
+        stepCount: stepCount ?? { daily: [], avg: null },
+        activeEnergy: activeEnergy ?? { daily: [], avg: null },
+        flightsClimbed: flightsClimbed ?? { daily: [], avg: null },
+        sleep: sleep ?? { daily: [], avg: null },
       };
 
   const fetchAllHealthData = async () => {

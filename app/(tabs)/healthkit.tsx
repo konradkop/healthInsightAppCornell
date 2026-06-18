@@ -62,21 +62,32 @@ export default function HealthKitDemo() {
 
   }
 
-  const renderDailyStats = (stats: DailyStats, unit?: string) => (
-    <View>
-      <Text style={styles.label}>Daily Values:</Text>
+const renderDailyStats = (stats: DailyStats, unit?: string) => (
+  <View>
+    <Text style={styles.label}>Daily Values:</Text>
 
-      {stats.daily.map((val, idx) => (
+    {stats.daily.map((val, idx) => {
+      const value =
+        typeof val === "number"
+          ? val
+          : typeof val?.value === "number"
+          ? val.value
+          : 0;
+
+      return (
         <Text key={idx} style={styles.data}>
-          Day {idx + 1}: {val.value.toFixed(0)} {unit ?? ""}
+          Day {idx + 1}: {value.toFixed(0)} {unit ?? ""}
         </Text>
-      ))}
+      );
+    })}
 
-      <Text style={[styles.data, styles.avg]}>
-        Average: {stats.avg?.toFixed(0)} {unit ?? ""}
-      </Text>
-    </View>
-  );
+    <Text style={[styles.data, styles.avg]}>
+      Average: {(stats.avg ?? 0).toFixed(0)} {unit ?? ""}
+    </Text>
+  </View>
+);
+
+  
 
   return (
     <View style={styles.container}>
