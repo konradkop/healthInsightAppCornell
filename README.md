@@ -101,3 +101,11 @@ npm run web
 - `android/` and `ios/` — native project files for building Android and iOS
 - `assets/` — images and other static assets
 - `scripts/` — helper scripts such as `reset-project.js`
+
+
+
+## Deploying Project
+
+ Once you are done with your edits and want to deploy your project into testflight and expo use this command:
+ eas build --platform ios --profile production --auto-submit
+ 
